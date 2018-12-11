@@ -74,7 +74,7 @@ var gameBoard = (function () {
         // height: document.body.clientHeight,
         width: 600,
         height: 600,
-        x1: 10,
+        x1: 50,
         x2: 0,
         y1: 10,
         y2: 0,
@@ -128,6 +128,8 @@ var gameBoard = (function () {
 
         gameBoard.width = game.width;
         gameBoard.height = game.height;
+        gameBoard.margin = "0 30px 0 30px";
+        gameBoard.padding = "30px";
         // Get the Game Board context
         ctx = gameBoard.getContext("2d");
 
