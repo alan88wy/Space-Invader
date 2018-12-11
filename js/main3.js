@@ -1,5 +1,4 @@
 var progress = 0;
-var endOfLine = false;
 
 var imgDetail = (function () {
 
@@ -100,9 +99,9 @@ var gameBoard = (function () {
 
     game.x2 = game.width;
     game.y2 = game.height;
-    game.maxOffSet = Math.floor(game.xBuffer * 2);
+    game.maxOffSet = Math.floor(game.xBuffer * 1.5);
     game.startX = game.x1 + game.xBuffer * 2;
-    game.startY = game.y1 + game.xBuffer * 4;
+    game.startY = game.y1 + game.xBuffer * 2;
     game.noOfEnemyPerRow = Math.floor((game.width - 4 * game.xBuffer) / game.xBuffer);
     // game.noOfRow = Math.floor((game.height - game.yBuffer) / game.yBuffer);
     // game.lastEnemyRow = Math.floor(game.noOfRow * 0.3);
@@ -185,7 +184,6 @@ var enemy = (function () {
         for (var i = enemyList.length - 1; i >= 0; i--) {
 
             enemyList[i].x1 = enemyList[i].x1 + xoffSetAmt;
-            enemyList[i].x2 = enemyList[i].x2 + xoffSetAmt;
 
         }
     }
@@ -197,9 +195,8 @@ var enemy = (function () {
         // for (var i = 0; i < enemyList.length; i++) {
         for (var i = enemyList.length - 1; i >= 0; i--) {
 
-            // console.log(enemyList[i].x1);
             if (!enemyList[i].disable) {
-                var x = enemyList[i].x1 ; //+ gameBoard.game.xOffSet;
+                var x = enemyList[i].x1 + gameBoard.game.xOffSet;
                 var y = enemyList[i].y1;
                 var img = enemyList[i].img;
                 gameBoard.ctx.drawImage(img, x, y, imgDetail.imgWidth, imgDetail.imgHeight);
@@ -209,8 +206,8 @@ var enemy = (function () {
 
     function createEnemy() {
 
-        var x = gameBoard.game.startX;
-        var y = gameBoard.game.startY; //+ gameBoard.game.totalNoOfRow * gameBoard.game.yBuffer;
+        var x = gameBoard.game.startX + gameBoard.game.xOffSet;
+        var y = gameBoard.game.startY + gameBoard.game.totalNoOfRow * gameBoard.game.yBuffer;
         var numRow = gameBoard.game.totalNoOfRow;
 
         enemyList = [];
@@ -241,10 +238,12 @@ var enemy = (function () {
 
     }
 
-    function moveEnemyDown() {
+    function shuffleEnemy() {
         for (var i = 0; i < enemyList.length; i++) {
             enemyList[i].y1 = enemyList[i].y1 + gameBoard.game.yBuffer;
             enemyList[i].y2 = enemyList[i].y2 + gameBoard.game.yBuffer;
+            // enemyList[i].x1 = enemyList[i].x1 + gameBoard.game.xOffSet;
+            // enemyList[i].x2 = enemyList[i].x2 + gameBoard.game.xOffSet;
             maxY = maxY <= enemyList[i].y1 ? enemyList[i].y1 : maxY;
         }
     }
@@ -254,8 +253,8 @@ var enemy = (function () {
         var x = xPos;
         var y = yPos;
 
-        // console.log("i wax");
-// 
+        console.log("i wax");
+
         var img = imgDetail.getEnemyImage();
 
         for (var i = 0; i < gameBoard.game.noOfEnemyPerRow; i++) {
@@ -318,7 +317,7 @@ var enemy = (function () {
                 !enemyObj.disable) {
                 // if ((x >= enemyObj.x1 && x <= enemyObj.x2) && enemyObj.disable) {
                 enemyList[i].disable = true;
-                // console.log(enemyList[i].img);
+                console.log(enemyList[i].img);
                 found = true;
                 break
             }
@@ -346,7 +345,7 @@ var enemy = (function () {
     return {
         displayEnemy,
         activateNewEnemy,
-        moveEnemyDown,
+        shuffleEnemy,
         updateEnemy,
         gameOver,
         enemyList,
@@ -400,6 +399,7 @@ var player = (function () {
     }
 })();
 
+var endOfLine = false;
 
 window.addEventListener('keydown', function (e) {
 
@@ -605,10 +605,12 @@ function moveEnemy() {
             endGame = true;
             stopGame();
         } else {
-            enemy.moveEnemyDown();
+            enemy.shuffleEnemy();
             endOfLine = false;
 
             if (gameBoard.game.noOfRowOfEnemy < gameBoard.game.totalNoOfRow) {
+                var x = gameBoard.game.startX;
+                var y = gameBoard.game.startY;
                 enemy.activateNewEnemy();
                 gameBoard.game.noOfRowOfEnemy += 1;
 
@@ -616,39 +618,8 @@ function moveEnemy() {
 
         }
     } else {
-        var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
-
-        if (gameBoard.game.direction === 1) {
-            
-            gameBoard.game.xOffSet += offSetAmt;
-
-            if (gameBoard.game.xOffSet >= gameBoard.game.maxOffSet) {
-                gameBoard.game.xOffSet = gameBoard.game.maxOffSet - offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
-                gameBoard.game.direction = -1;
-            } else {
-
-                if (gameBoard.game.xOffSet === 0) {
-                    gameBoard.game.xOffSet = offSetAmt;
-                } else {
-                }
-                enemy.updateEnemy(offSetAmt);
-            }
-        } else {
-
-            if (gameBoard.game.xOffSet >= 0) {
-                gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
-            } else if (Math.abs(gameBoard.game.xOffSet) >= gameBoard.game.maxOffSet) {
-                endOfLine = true;
-                gameBoard.game.xOffSet += offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
-                gameBoard.game.direction = 1;
-            } else {
-                gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
-            }
-        }
+        changeOffSet();
+        // render();
     }
 
 
