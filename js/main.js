@@ -1,5 +1,6 @@
 var progress = 0;
 var endOfLine = false;
+var targetFound = false;
 
 var imgDetail = (function () {
 
@@ -74,7 +75,7 @@ var gameBoard = (function () {
         // height: document.body.clientHeight,
         width: 600,
         height: 600,
-        x1: 50,
+        x1: 0,
         x2: 0,
         y1: 10,
         y2: 0,
@@ -178,6 +179,7 @@ var enemy = (function () {
         x2: 0,
         y1: 0,
         y2: 0,
+        points: 10,
         disable: false
     };
 
@@ -201,7 +203,7 @@ var enemy = (function () {
 
             // console.log(enemyList[i].x1);
             if (!enemyList[i].disable) {
-                var x = enemyList[i].x1 ; //+ gameBoard.game.xOffSet;
+                var x = enemyList[i].x1; //+ gameBoard.game.xOffSet;
                 var y = enemyList[i].y1;
                 var img = enemyList[i].img;
                 gameBoard.ctx.drawImage(img, x, y, imgDetail.imgWidth, imgDetail.imgHeight);
@@ -257,12 +259,12 @@ var enemy = (function () {
         var y = yPos;
 
         // console.log("i wax");
-// 
+        // 
         var img = imgDetail.getEnemyImage();
 
         for (var i = 0; i < gameBoard.game.noOfEnemyPerRow; i++) {
 
-            enemyObj = {
+            var enemyObj = {
                 img: img,
                 x1: x,
                 x2: x + imgDetail.imgWidth,
@@ -307,29 +309,30 @@ var enemy = (function () {
 
     function checkCollision(x1, x2, y1, y2) {
 
-        var found = false;
+        if (targetFound) {
+            return 0
+        }
+
+        var points = 0;
 
         for (var i = 0; i < enemyList.length; i++) {
 
-            enemyObj = enemyList[i];
 
-            if (((x1 >= enemyObj.x1 && x1 <= enemyObj.x2) ||
-                    (x2 >= enemyObj.x1 && x1 <= enemyObj.x2) ||
-                    (y1 >= enemyObj.y1 && y1 <= enemyObj.y2) ||
-                    (y2 >= enemyObj.y1 && y2 <= enemyObj.y2)) &&
-                !enemyObj.disable) {
-                // if ((x >= enemyObj.x1 && x <= enemyObj.x2) && enemyObj.disable) {
-                enemyList[i].disable = true;
-                // console.log(enemyList[i].img);
-                found = true;
-                break
+            // if (((x1 >= enemyObj.x1 && x1 <= enemyObj.x2) ||
+            //         (x2 >= enemyObj.x1 && x1 <= enemyObj.x2) ||
+            //         (y1 >= enemyObj.y1 && y1 <= enemyObj.y2) ||
+            //         (y2 >= enemyObj.y1 && y2 <= enemyObj.y2)) &&
+
+            if (!enemyList[i].disable) {
+                if ((x1 >= enemyList[i].x1 && x1 <= enemyList[i].x2) ||
+                    (x2 >= enemyList[i].x1 && x2 <= enemyList[i].x2)) {
+                    enemyList[i].disable = true;
+                    player.updateScore(enemyList[i].points);
+                    targetFound = true;
+                    break
+                }
             }
-        }
 
-        if (found) {
-            return true
-        } else {
-            return false;
         }
 
     }
@@ -373,6 +376,14 @@ var player = (function () {
         currentY: 0
     }
 
+    function updateScore(points) {
+        if (currentPlayer.playerNo = 1) {
+            playerInfo.player1.score += points
+        } else {
+            playerInfo.player2.score += points
+        }
+    }
+
     function updateScoreCard(currentPlayer) {
 
         var score = 0;
@@ -396,6 +407,7 @@ var player = (function () {
     }
 
     return {
+        updateScore,
         updateScoreCard,
         currentPlayer,
         displayPlayer
@@ -431,10 +443,7 @@ window.addEventListener('keydown', function (e) {
     } else if (e.keyCode === 27) {
         // stopGame()
     } else if (e.keyCode === 32 || e.keyCode === 38) {
-
-        Bullets.prepareArmory(player.currentPlayer.currentX, player.currentPlayer.currentY);
-
-        requestAnimationFrame(Bullets.shoot);
+        Bullets.shoot();
     }
 
 }, false);
@@ -444,162 +453,69 @@ var Bullets = (function () {
     bulletObj = {
         x: 0,
         y: 0,
-        color: '#000000',
-        width: 20,
-        height: 40,
-        velocity: 0
+        startX: 0,
+        startY: 0,
+        color: "#FFFFFF", // '#000000',
+        width: 3,
+        height: 4,
+        velocity: 0,
+        active: false
     };
-
-    var bulletList = [];
 
     function bulletIsWithin(x, y) {
         return x >= 0 && x <= gameBoard.game.width && y >= 0 && y <= gameBoard.height
     }
 
-    function prepareArmory(x = player.currentPlayer.currentX, y = player.currentPlayer.currentY) {
+    function drawBullet() {
 
-        bulletList = [];
-
-        offSet = imgDetail.imgHeight / 2;
-
-        j = Math.floor(y / offSet);
-
-        for (var i = 0; i < j; i++) {
-
-            bulletObj = {
-                x: x,
-                y: i * offSet,
-                color: '#000000',
-                width: 4,
-                height: 4,
-                velocity: 0
-            };
-
-            bulletList.push(bulletObj);
-
-        }
-
-    }
-
-    prepareArmory();
-
-    function drawBullet(bulletObj) {
-
-        gameBoard.ctx.fillStyle = bulletObj.color;
-        gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
-
-    };
-
-
-    function clearBullet() {
-
-        for (i = 0; i < bulletList.length; i++) {
-
-            gameBoard.ctx.clearRect(bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height);
+        if (bulletObj.active) {
+            gameBoard.ctx.fillStyle = bulletObj.color;
+            gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
+            updateBullet();
         }
     };
 
-    function updateBullet(x, y) {
-        bulletObj.velocity = (progress / 50) * gameBoard.game.yBuffer / 2;
+    function updateBullet() {
+
+        if (bulletObj.active) {
+
+            if (bulletObj.y <= gameBoard.game.startY) {
+                bulletObj.active = false;
+            } else {
+                bulletObj.y = bulletObj.y - bulletObj.velocity;
+                enemy.checkCollision(bulletObj.x, bulletObj.y, bulletObj.x + bulletObj.width, bulletObj.y + bulletObj.height) ;
+
+            }
+        }
     };
 
     function shoot() {
 
-        for (i = 0; i < bulletList.length; i++) {
-
-            drawBullet(bulletList[i]);
-            if (enemy.checkCollision(bulletList[i].x, bulletList[i].x + bulletList[i].width, bulletList[i].y, bulletList[i].height)) {
-                break
-            }
+        if (!bulletObj.active) {
+            targetFound = false;
+            bulletObj.active = true;
+            bulletObj.startX = player.currentPlayer.currentX + imgDetail.imgWidth / 2;
+            bulletObj.startY = player.currentPlayer.currentY;
+            bulletObj.velocity = (progress / 50) * gameBoard.game.yBuffer / 2;
+            bulletObj.x = player.currentPlayer.currentX + imgDetail.imgWidth / 2;
+            bulletObj.y = player.currentPlayer.currentY;
         }
-
 
     }
 
-
     return {
         updateBullet,
-        bulletList,
-        prepareArmory,
-        clearBullet,
+        drawBullet,
         shoot
     }
 
 
 })();
 
-// function changeOffSet() {
-
-//     // var offSetAmt = Math.floor(imgDetail.imgWidth / 4);
-//     var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
-
-//     if (gameBoard.game.direction === 1) {
-
-//         gameBoard.game.xOffSet += offSetAmt;
-
-//         if (gameBoard.game.xOffSet >= gameBoard.game.maxOffSet) {
-//             gameBoard.game.xOffSet = gameBoard.game.maxOffSet - offSetAmt;
-//             enemy.updateEnemy(-1*offSetAmt);
-//             gameBoard.game.direction = -1;
-//         } else if (gameBoard.game.xOffSet === 0) {
-//             gameBoard.game.xOffSet = offSetAmt;
-//             enemy.updateEnemy(offSetAmt);
-//         }
-//     } else {
-
-//         if (gameBoard.game.xOffSet >= 0) {
-//             gameBoard.game.xOffSet -= offSetAmt;
-//             enemy.updateEnemy(-1*offSetAmt);
-//         } else if (Math.abs(gameBoard.game.xOffSet) >= gameBoard.game.maxOffSet) {
-//             endOfLine = true;
-//             gameBoard.game.xOffSet += offSetAmt;
-//             enemy.updateEnemy(offSetAmt);
-//             gameBoard.game.direction = 1;
-//         } else {
-//             gameBoard.game.xOffSet -= offSetAmt;
-//             enemy.updateEnemy(-1*offSetAmt);
-//         }
-//     }
-// }
-
-function changeOffSet() {
-
-    // var offSetAmt = Math.floor(imgDetail.imgWidth / 4);
-    var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
-
-    if (gameBoard.game.direction === 1) {
-
-        gameBoard.game.xOffSet += offSetAmt;
-
-        if (gameBoard.game.xOffSet >= gameBoard.game.maxOffSet) {
-            gameBoard.game.xOffSet = gameBoard.game.maxOffSet - offSetAmt;
-            // enemy.updateEnemy(-1*offSetAmt);
-            gameBoard.game.direction = -1;
-        } else {
-            // enemy.updateEnemy(-1*offSetAmt);
-            if (gameBoard.game.xOffSet === 0) {
-                gameBoard.game.xOffSet = offSetAmt;
-            }
-            // enemy.updateEnemy(offSetAmt);
-        }
-    } else {
-
-        if (gameBoard.game.xOffSet >= 0) {
-            gameBoard.game.xOffSet -= offSetAmt;
-            // enemy.updateEnemy(-1*offSetAmt);
-        } else if (Math.abs(gameBoard.game.xOffSet) >= gameBoard.game.maxOffSet) {
-            endOfLine = true;
-            gameBoard.game.xOffSet += offSetAmt;
-            // enemy.updateEnemy(offSetAmt);
-            gameBoard.game.direction = 1;
-        } else {
-            gameBoard.game.xOffSet -= offSetAmt;
-            // enemy.updateEnemy(-1*offSetAmt);
-        }
-    }
-}
-
 function moveEnemy() {
+
+    var xRightBorder = gameBoard.game.width - gameBoard.game.maxOffSet;
+    var xLeftBorder = gameBoard.game.maxOffSet;
 
     if (endOfLine) {
 
@@ -621,34 +537,33 @@ function moveEnemy() {
         var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
 
         if (gameBoard.game.direction === 1) {
-            
+
             gameBoard.game.xOffSet += offSetAmt;
 
             if (gameBoard.game.xOffSet >= gameBoard.game.maxOffSet) {
                 gameBoard.game.xOffSet = gameBoard.game.maxOffSet - offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
+                enemy.updateEnemy(-1 * offSetAmt);
                 gameBoard.game.direction = -1;
             } else {
 
                 if (gameBoard.game.xOffSet === 0) {
                     gameBoard.game.xOffSet = offSetAmt;
-                } else {
-                }
+                } else {}
                 enemy.updateEnemy(offSetAmt);
             }
         } else {
 
             if (gameBoard.game.xOffSet >= 0) {
                 gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
+                enemy.updateEnemy(-1 * offSetAmt);
             } else if (Math.abs(gameBoard.game.xOffSet) >= gameBoard.game.maxOffSet) {
                 endOfLine = true;
                 gameBoard.game.xOffSet += offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
+                enemy.updateEnemy(-1 * offSetAmt);
                 gameBoard.game.direction = 1;
             } else {
                 gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1*offSetAmt);
+                enemy.updateEnemy(-1 * offSetAmt);
             }
         }
     }
@@ -681,10 +596,14 @@ function render() {
     progress = ct - start;
 
     gameBoard.clearGameBoard();
+    moveEnemy();
+    Bullets.drawBullet();
     player.updateScoreCard(player.currentPlayer.playerNo);
     player.displayPlayer(player.currentPlayer.currentX, player.currentPlayer.currentY);
     enemy.displayEnemy();
-    moveEnemy();
+    
+    
+    // Bullets.updateBullet();
 
     // Bullets.shoot();
 
