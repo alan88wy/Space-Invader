@@ -75,10 +75,10 @@ var gameBoard = (function () {
         // height: window.screen.availHeight,
         // width: document.body.clientWidth,
         // height: document.body.clientHeight,
-        // width: 600,
-        // height: 600,
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: 600,
+        height: 600,
+        // width: window.innerWidth,
+        // height: window.innerHeight,
         x1: 0,
         x2: 0,
         y1: 0,
@@ -97,64 +97,65 @@ var gameBoard = (function () {
         verocity: 0
     }
 
-    game.xBuffer = imgDetail.imgWidth + 10;
-    game.yBuffer = imgDetail.imgHeight + 10
-
-    // game.x1 = game.xBuffer * 2;
-    // game.y1 = game.yBuffer * 2;
-
-    game.x2 = game.width - 10;
-    game.y2 = game.height - 10;
-    game.maxOffSet = Math.floor(game.xBuffer * 2);
-    game.startX = game.x1 + game.xBuffer * 2;
-    game.startY = game.y1 + game.xBuffer * 4;
-    game.noOfEnemyPerRow = Math.floor((game.width - 4 * game.xBuffer) / game.xBuffer);
-    // game.noOfRow = Math.floor((game.height - game.yBuffer) / game.yBuffer);
-    // game.lastEnemyRow = Math.floor(game.noOfRow * 0.3);
-    game.direction = 1;
-    game.verocity = Math.floor(imgDetail.width / 2);
-    // game.rowOfEnemy = game.noOfRow - 2;
-    // game.lastRow = Math.floor(game.height / game.yBuffer);
-
     var ctx = "";
 
+    function resetGameBoard() {
+        game.xBuffer = imgDetail.imgWidth + 10;
+        game.yBuffer = imgDetail.imgHeight + 10
+        game.xOffSet = 0;
+        game.noOfRowOfEnemy = 0;
+        game.direction = -1;
+        game.verocity = 0;
+        game.x2 = game.width - 10;
+        game.y2 = game.height - 10;
+        game.maxOffSet = Math.floor(game.xBuffer * 2);
+        game.startX = game.x1 + game.xBuffer * 2;
+        game.startY = game.y1 + game.xBuffer * 4;
+        game.noOfEnemyPerRow = Math.floor((game.width - 4 * game.xBuffer) / game.xBuffer);
+        game.direction = 1;
+        game.verocity = Math.floor(imgDetail.width / 2);
+    }
+
+    resetGameBoard();
 
     function clearGameBoard() {
         ctx.clearRect(0, 0, game.width, game.height);
     }
 
+    function displayBackground() {
+        // Setup Game board background image
+        var background = new Image();
+        background.src = 'images/background.jpg';
+        ctx.drawImage(background, 0, 0, game.width, game.height)
+    }
+
     function initializeGameBoard() {
 
         //create the canvas element
-        var gameBoard = document.createElement("canvas");
+        var gameBody = document.createElement("canvas");
         // var scoreCard = document.createElement("p");
 
         // Set the game board width and height
 
-        gameBoard.width = game.width;
-        gameBoard.height = game.height;
+        gameBody.width = game.width;
+        gameBody.height = game.height;
+        gameBody.className = "canval";
         // gameBoard.margin = "0 30px 0 30px";
         // gameBoard.padding = "30px";
         // gameBoard.border = "10px";
         // Get the Game Board context
-        ctx = gameBoard.getContext("2d");
+        ctx = gameBody.getContext("2d");
 
         //first we clear the Game Board
         clearGameBoard();
         // Add canvas to the body
-        document.body.insertAdjacentElement('beforeend', gameBoard);
+        document.body.insertAdjacentElement('beforeend', gameBody);
 
-        // Setup Game board background image
-        // var background = new Image();
-        // background.src = backroundImageSource;
-        // background.onload = function () {
-        //     ctx.drawImage(background, 0, 0, game.width, game.height)
-        //     updateScoreCard(currentPlayer)
-        // }
 
     }
 
     initializeGameBoard();
+
 
     var enemyZone = {
         x1: 30,
@@ -167,7 +168,9 @@ var gameBoard = (function () {
         ctx,
         game,
         enemyZone,
-        clearGameBoard
+        clearGameBoard,
+        resetGameBoard,
+        displayBackground
     }
 
 })();
@@ -178,6 +181,7 @@ function generateRandomNumber(x) {
 
 var enemy = (function () {
     var enemyList = [];
+    var masterEnemyList = [];
     var enemyObj = {
         img: "",
         x1: 0,
@@ -190,6 +194,19 @@ var enemy = (function () {
 
     var maxY = 0;
 
+    function remainingEnemy() {
+
+        var noOfEnemy = 0;
+
+        for (var i = 0; i < enemyList.length; i++) {
+            if (enemyList[i].active) {
+                noOfEnemy++;
+            }
+        }
+
+        return noOfEnemy
+    }
+
     function updateEnemy(xoffSetAmt) {
         for (var i = enemyList.length - 1; i >= 0; i--) {
 
@@ -201,12 +218,8 @@ var enemy = (function () {
 
     function displayEnemy() {
 
-        // updateEnemy();
-
-        // for (var i = 0; i < enemyList.length; i++) {
         for (var i = enemyList.length - 1; i >= 0; i--) {
 
-            // console.log(enemyList[i].x1);
             if (!enemyList[i].disable) {
                 var x = enemyList[i].x1; //+ gameBoard.game.xOffSet;
                 var y = enemyList[i].y1;
@@ -216,15 +229,21 @@ var enemy = (function () {
         }
     }
 
+    function resetEnemy() {
+        enemyList = masterEnemyList.splice(0);
+    }
+
     function createEnemy() {
 
         var x = gameBoard.game.startX;
-        var y = gameBoard.game.startY; //+ gameBoard.game.totalNoOfRow * gameBoard.game.yBuffer;
+        var y = gameBoard.game.startY;
         var numRow = gameBoard.game.totalNoOfRow;
 
         enemyList = [];
 
         gameBoard.game.noOfRowOfEnemy = 3;
+
+        var points = 10;
 
         for (var i = 0; i < numRow; i++) {
 
@@ -234,7 +253,10 @@ var enemy = (function () {
                 disable = true;
             }
 
-            addRowOfEnemy(x, y, disable);
+            addRowOfEnemy(x, y, disable, points);
+
+            points += 10;
+
             y = y - gameBoard.game.yBuffer;
 
             maxY = maxY <= y ? y : maxY;
@@ -243,6 +265,8 @@ var enemy = (function () {
     }
 
     createEnemy();
+
+    masterEnemyList = enemyList.slice(0);
 
     function moveEnemyDown() {
         for (var i = 0; i < enemyList.length; i++) {
@@ -253,7 +277,7 @@ var enemy = (function () {
 
     }
 
-    function addRowOfEnemy(xPos, yPos, disableEnemy) {
+    function addRowOfEnemy(xPos, yPos, disableEnemy, points) {
 
         var x = xPos;
 
@@ -267,7 +291,7 @@ var enemy = (function () {
                 x2: x + imgDetail.imgWidth,
                 y1: yPos,
                 y2: yPos + imgDetail.imgHeight,
-                points: 10,
+                points: points,
                 disable: disableEnemy
             }
 
@@ -296,9 +320,10 @@ var enemy = (function () {
 
     function checkCollision(x1, y1, x2, y2) {
 
-        if (targetFound) {
-            return 0
-        }
+        // if (targetFound) {
+        //     return 0
+
+        // }
 
         for (var i = 0; i < enemyList.length; i++) {
             if (!enemyList[i].disable) {
@@ -306,13 +331,31 @@ var enemy = (function () {
                 if (((x1 >= enemyList[i].x1 && x1 <= enemyList[i].x2) ||
                         (x2 >= enemyList[i].x1 && x2 <= enemyList[i].x2)) &&
                     (y1 <= enemyList[i].y2)) {
+                    // if ((x1 >= enemyList[i].x1 && x1 <= enemyList[i].x2) ||
+                    //     (x2 >= enemyList[i].x1 && x2 <= enemyList[i].x2)) {
+                    //     if (y1 <= enemyList[i].y2) {
+
                     enemyList[i].disable = true;
                     player.updateScore(enemyList[i].points);
                     targetFound = true;
+
+                    // var img = new Image;
+                    // img.src = 'images/explosion.png'
+                    // gameBoard.ctx.drawImage(img, enemyList[i].x1, enemyList[i].y1, imgDetail.imgWidth, imgDetail.imgHeight);
+
                     break
+
+                    // }
+
                 }
             }
 
+        }
+
+        if (targetFound) {
+            return true
+        } else {
+            return false
         }
 
     }
@@ -341,10 +384,71 @@ var enemy = (function () {
         }
     }
 
+    function moveEnemy() {
+
+        var rightBorder = gameBoard.game.width - 10;
+        var leftBorder = gameBoard.game.x1 + 10;
+
+        if (endOfLine) {
+
+            if (enemy.gameOver()) {
+                endGame = true;
+                stopGame();
+            } else {
+                enemy.moveEnemyDown();
+                endOfLine = false;
+
+                if (gameBoard.game.noOfRowOfEnemy < gameBoard.game.totalNoOfRow) {
+                    enemy.activateNewEnemy();
+                    gameBoard.game.noOfRowOfEnemy += 1;
+
+                };
+
+            }
+        } else {
+            var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
+
+            // Use the 1st enemy in the 1st column to determine the movement
+            var firstEnemy = enemy.enemyList[0];
+            // Use the last enemy in the 1st column to determine the movement
+            var lastEnemy = enemy.enemyList[gameBoard.game.noOfEnemyPerRow - 1];
+            // 
+
+            if (gameBoard.game.direction === 1) {
+
+                if ((lastEnemy.x2 + offSetAmt) > rightBorder) {
+                    gameBoard.game.xOffSet -= offSetAmt;
+                    enemy.updateEnemy(-1 * offSetAmt);
+                    gameBoard.game.direction = -1;
+
+                } else {
+                    gameBoard.game.xOffSet += offSetAmt;
+                    enemy.updateEnemy(offSetAmt);
+                }
+
+            } else {
+                if ((firstEnemy.x1 - offSetAmt) < leftBorder) {
+                    gameBoard.game.xOffSet += offSetAmt;
+                    gameBoard.game.direction = 1;
+                    endOfLine = true;
+                    enemy.updateEnemy(offSetAmt);
+                } else {
+                    gameBoard.game.xOffSet -= offSetAmt;
+                    enemy.updateEnemy(-offSetAmt);
+                }
+
+            }
+        }
+
+
+    }
+
     return {
+        resetEnemy,
         displayEnemy,
         activateNewEnemy,
         moveEnemyDown,
+        moveEnemy,
         updateEnemy,
         gameOver,
         enemyList,
@@ -356,17 +460,30 @@ var player = (function () {
 
     var playerInfo = {
         player1: {
-            score: 0
+            score: 0,
+            noOfLives: 0
         },
         player2: {
-            score: 0
+            score: 0,
+            noOfLives: 0
         }
     }
 
+    var MaxLive = 3;
+
     var currentPlayer = {
         playerNo: 1,
+        noOfLives: 3,
         x: 0,
         y: 0
+    }
+
+    function playerAlive() {
+        if (currentPlayer.noOfLives < MaxLive) {
+            return false
+        } else {
+            return true;
+        }
     }
 
     function moveLeft() {
@@ -384,12 +501,13 @@ var player = (function () {
 
     function moveRight() {
         var mOffSet = imgDetail.imgWidth;
-        var xRightBorder = gameBoard.game.width - gameBoard.game.maxOffSet;
+        var xRightBorder = gameBoard.game.width - 40;
+
         var x = player.currentPlayer.x + mOffSet;
+
         if (x >= xRightBorder) {
             player.currentPlayer.x = xRightBorder;
         } else {
-            var x = player.currentPlayer.x + mOffSet;
             player.currentPlayer.x = x;
         }
     }
@@ -429,6 +547,7 @@ var player = (function () {
         updateScoreCard,
         currentPlayer,
         displayPlayer,
+        playerAlive,
         moveLeft,
         moveRight
     }
@@ -438,117 +557,34 @@ window.addEventListener('keydown', keyDown);
 
 function keyDown(e) {
 
-
-    console.log(e.keyCode);
     if ((e.keyCode === 37) || (e.keyCode === 65)) {
         prevKeyCode = e.keyCode;
         keyIsPress = true;
         player.moveLeft();
-    }
-
-    if ((e.keyCode === 39) || (e.keyCode === 68)) {
+    } else if ((e.keyCode === 39) || (e.keyCode === 68)) {
         prevKeyCode = e.keyCode;
         keyIsPress = true;
         player.moveRight();
-    }
-
-    if (e.keyCode === 27) {
+    } else if (e.keyCode === 27) {
         stopGame()
     }
 
-    if (e.keyCode === 32 || e.keyCode === 38) {
-        targetFound = false;
-        Bullets.shoot();
-
-        if (keyIsPress) {
-            if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
-               
-                player.moveLeft();
-            }
-
-            if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
-                console.log("I mean 39");
-                player.moveRight();
-            }
-        }
-
-    }
-
-    // if (e.keyCode === 32 || e.keyCode === 38) {
-    //     targetFound = false;
-    //     Bullets.shoot();
-    // }
 }
-
-window.addEventListener('keyup', keyUp);
-
-function keyUp(e) {
-
- 
-    if (e.keyCode === 32 || e.keyCode === 38) {
-        targetFound = false;
-        Bullets.shoot();
-
-        if (keyIsPress) {
-            if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
-               
-                player.moveLeft();
-            }
-
-            if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
-                console.log("I mean 39");
-                player.moveRight();
-            }
-        }
-
-    }
-
-    if (keyIsPress && e.keyCode === 37) {
-        // keyIsPress = false;
-        keyIsPress = true;
-        prevKeyCode = e.keyCode;
-        player.moveLeft();
-    }
-
-    if (keyIsPress && prevKeyCode === 39) {
-        // keyIsPress = false;
-        keyIsPress = true;
-        prevKeyCode = e.keyCode;
-        player.moveRight();
-    }
-    // if ((prevKeyCode === 37) || (prevKeyCode === 39)) {
-    //     keyIsPress = false;
-    // }
-};
-
-
 
 window.addEventListener('keypress', function (e) {
 
-    if (e.keyCode === 37) {
-        keyIsPress = true;
-        prevKeyCode = e.keyCode;
-        player.moveLeft();
-    }
+    if (e.keyCode === 32 || e.keyCode === 38) {
+        targetFound = false;
+        if (keyIsPress) {
 
-    if (e.keyCode === 39) {
-        keyIsPress = true;
-        prevKeyCode = e.keyCode;
-        player.moveRight();
+            if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
+                player.moveLeft();
+            } else if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
+                player.moveRight();
+            }
+        }
+        Bullets.shoot();
     }
-
-    if (e.keyCode === 65) {
-        keyIsPress = true;
-        prevKeyCode = e.keyCode;
-        player.moveLeft();
-    }
-
-    if (e.keyCode === 68) {
-        keyIsPress = true;
-        prevKeyCode = e.keyCode;
-        player.moveRight();
-    }
-
 });
 
 var Bullets = (function () {
@@ -559,117 +595,100 @@ var Bullets = (function () {
         startX: 0,
         startY: 0,
         color: "#FFFFFF", // '#000000',
-        width: 10,
-        height: 4,
+        width: 24,
+        height: 24,
         velocity: 0,
         active: false
     };
 
+    var bulletList = [];
+
+    function resetBulletList() {
+        bulletList = []
+    }
+
     function drawBullet() {
 
-        if (bulletObj.active) {
-            gameBoard.ctx.fillStyle = bulletObj.color;
-            gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
-            updateBullet();
+        for (var i = 0; i < bulletList.length; i++) {
+            if (bulletList[i].active) {
+
+                var missile = new Image();
+                missile.src = 'images/missile.png';
+                gameBoard.ctx.drawImage(missile, bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height);
+                
+                // gameBoard.ctx.beginPath();
+                // gameBoard.ctx.arc(bulletObj.x, bulletObj.y, 10, 0, 20); //Math.PI * 2);
+                // gameBoard.ctx.rect(bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height)
+                // gameBoard.ctx.fillStyle = bulletList[i].color;
+                // gameBoard.ctx.fill();
+                // gameBoard.ctx.closePath();
+                // gameBoard.ctx.fillStyle = bulletObj.color;
+                // gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
+
+                if (enemy.checkCollision(bulletList[i].x, bulletList[i].y, bulletList[i].x + bulletList[i].width, bulletList[i].y + bulletList[i].height)) {
+                    bulletList[i].active = false;
+                    targetFound = false;
+                    // bulletList.slice(i,i);
+                }
+            }
         }
 
+        updateBullet();
     };
 
     function updateBullet() {
-        if (targetFound) {
-            bulletObj.active = false;
-        }
+        // if (targetFound) {
+        //     bulletObj.active = false;
+        // }
 
-        if (bulletObj.active) {
+        // if (bulletObj.active) {
 
-            if (bulletObj.y <= gameBoard.game.startY) {
-                bulletObj.active = false;
-            } else {
-                bulletObj.y = bulletObj.y - bulletObj.velocity;
-                enemy.checkCollision(bulletObj.x, bulletObj.y, bulletObj.x + bulletObj.width, bulletObj.y + bulletObj.height);
+        for (var i = 0; i < bulletList.length; i++) {
+            if (bulletList[i].active) {
+                if (bulletList[i].y <= gameBoard.game.startY) {
+                    bulletList[i].active = false;
+                    // bulletList.slice(i,i);
+                } else {
+                    bulletList[i].y = bulletList[i].y - bulletList[i].velocity;
+                    // bulletObj.y = bulletObj.y + dy;
+                    // bulletObj.x = bulletObj.y + dx;
+
+                }
             }
         }
     };
 
     function shoot() {
 
-        if (!bulletObj.active) {
-            targetFound = false;
-            bulletObj.active = true;
-            bulletObj.velocity = (progress / 30) * gameBoard.game.yBuffer;
-            bulletObj.x = player.currentPlayer.x + imgDetail.imgWidth / 2 - bulletObj.width / 2;
-            bulletObj.y = player.currentPlayer.y;
+        var bulletData = {
+            x: player.currentPlayer.x + imgDetail.imgWidth - bulletObj.width / 2,
+            y: player.currentPlayer.y,
+            startX: bulletObj.startX,
+            startY: bulletObj.startY,
+            color: bulletObj.color,
+            width: bulletObj.width,
+            height: bulletObj.height,
+            velocity: (progress / 80) * gameBoard.game.yBuffer,
+            active: true
         }
+
+        targetFound = false;
+
+        bulletList.push(bulletData);
 
     }
 
     return {
         updateBullet,
         drawBullet,
+        resetBulletList,
         shoot
     }
 
 
 })();
 
-function moveEnemy() {
 
-    var rightBorder = gameBoard.game.width - 10;
-    var leftBorder = gameBoard.game.x1 + 10;
-
-    if (endOfLine) {
-
-        if (enemy.gameOver()) {
-            endGame = true;
-            stopGame();
-        } else {
-            enemy.moveEnemyDown();
-            endOfLine = false;
-
-            if (gameBoard.game.noOfRowOfEnemy < gameBoard.game.totalNoOfRow) {
-                enemy.activateNewEnemy();
-                gameBoard.game.noOfRowOfEnemy += 1;
-
-            };
-
-        }
-    } else {
-        var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
-
-        // Use the 1st enemy in the 1st column to determine the movement
-        var firstEnemy = enemy.enemyList[0];
-        // Use the last enemy in the 1st column to determine the movement
-        var lastEnemy = enemy.enemyList[gameBoard.game.noOfEnemyPerRow - 1];
-        // 
-
-        if (gameBoard.game.direction === 1) {
-
-            if ((lastEnemy.x2 + offSetAmt) > rightBorder) {
-                gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1 * offSetAmt);
-                gameBoard.game.direction = -1;
-
-            } else {
-                gameBoard.game.xOffSet += offSetAmt;
-                enemy.updateEnemy(offSetAmt);
-            }
-
-        } else {
-            if ((firstEnemy.x1 - offSetAmt) < leftBorder) {
-                gameBoard.game.xOffSet += offSetAmt;
-                gameBoard.game.direction = 1;
-                endOfLine = true;
-                enemy.updateEnemy(offSetAmt);
-            } else {
-                gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-offSetAmt);
-            }
-
-        }
-    }
-
-
-}
 
 function stopGame() {
     // clearInterval(Movement);
@@ -689,20 +708,27 @@ player.currentPlayer.x = gameBoard.game.x2 / 2;
 player.currentPlayer.y = gameBoard.game.y2 - gameBoard.game.yBuffer;
 var endGame = false;
 
+
+
 function render() {
 
     var ct = Date.now();
 
     progress = ct - start;
 
+
     gameBoard.clearGameBoard();
 
+    gameBoard.displayBackground();
+
+    enemy.displayEnemy();
+    player.displayPlayer(player.currentPlayer.x, player.currentPlayer.y);
     Bullets.drawBullet();
     // debugger;
     player.updateScoreCard(player.currentPlayer.playerNo);
-    player.displayPlayer(player.currentPlayer.x, player.currentPlayer.y);
-    moveEnemy();
-    enemy.displayEnemy();
+
+    enemy.moveEnemy();
+
 
 
     if (!endGame) {
@@ -712,5 +738,13 @@ function render() {
     start = ct;
 }
 
+gameBoard.resetGameBoard();
+Bullets.resetBulletList();
 
 requestAnimationFrame(render);
+
+// gameBoard.resetGameBoard();
+// enemy.resetEnemy();
+// Bullets.resetBulletList();
+
+// requestAnimationFrame(render);
