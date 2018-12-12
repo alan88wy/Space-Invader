@@ -1,10 +1,12 @@
 body {
-    margin: 0;
-    width: 99vw;
-    height: 100vh;
+    margin: auto;
+    /* width: 600px;
+    
+    height: 600px; */
+    width: 100%;
     background-image: url('../images/background.jpg');
-    background-size: cover;
+    background-size: 100vw 100vh;
     background-repeat: no-repeat;
-    margin-left: 50px;
+    /* margin-left: 50px; */
 }
 

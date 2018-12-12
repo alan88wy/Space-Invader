@@ -1,6 +1,8 @@
 var progress = 0;
 var endOfLine = false;
 var targetFound = false;
+var keyIsPress = false;
+var prevKeyCode = 0;
 
 var imgDetail = (function () {
 
@@ -60,7 +62,7 @@ var imgDetail = (function () {
     return {
         imgWidth,
         imgHeight,
-        noOfImages,
+        // noOfImages,
         imageList,
         playerImage,
         getEnemyImage
@@ -73,11 +75,13 @@ var gameBoard = (function () {
         // height: window.screen.availHeight,
         // width: document.body.clientWidth,
         // height: document.body.clientHeight,
-        width: 600,
-        height: 600,
+        // width: 600,
+        // height: 600,
+        width: window.innerWidth,
+        height: window.innerHeight,
         x1: 0,
         x2: 0,
-        y1: 10,
+        y1: 0,
         y2: 0,
         xBuffer: 0,
         yBuffer: 0,
@@ -89,7 +93,7 @@ var gameBoard = (function () {
         totalNoOfRow: 5,
         minRow: 3,
         noOfRowOfEnemy: 0,
-        direction: 1,
+        direction: -1,
         verocity: 0
     }
 
@@ -99,8 +103,8 @@ var gameBoard = (function () {
     // game.x1 = game.xBuffer * 2;
     // game.y1 = game.yBuffer * 2;
 
-    game.x2 = game.width;
-    game.y2 = game.height;
+    game.x2 = game.width - 10;
+    game.y2 = game.height - 10;
     game.maxOffSet = Math.floor(game.xBuffer * 2);
     game.startX = game.x1 + game.xBuffer * 2;
     game.startY = game.y1 + game.xBuffer * 4;
@@ -116,7 +120,7 @@ var gameBoard = (function () {
 
 
     function clearGameBoard() {
-        ctx.clearRect(0, 0, game.x2, game.y2);
+        ctx.clearRect(0, 0, game.width, game.height);
     }
 
     function initializeGameBoard() {
@@ -129,8 +133,9 @@ var gameBoard = (function () {
 
         gameBoard.width = game.width;
         gameBoard.height = game.height;
-        gameBoard.margin = "0 30px 0 30px";
-        gameBoard.padding = "30px";
+        // gameBoard.margin = "0 30px 0 30px";
+        // gameBoard.padding = "30px";
+        // gameBoard.border = "10px";
         // Get the Game Board context
         ctx = gameBoard.getContext("2d");
 
@@ -239,27 +244,19 @@ var enemy = (function () {
 
     createEnemy();
 
-    function clearEnemy() {
-
-        gameBoard.ctx.clearRect(0, 0, 1024, 1024);
-
-    }
-
     function moveEnemyDown() {
         for (var i = 0; i < enemyList.length; i++) {
             enemyList[i].y1 = enemyList[i].y1 + gameBoard.game.yBuffer;
             enemyList[i].y2 = enemyList[i].y2 + gameBoard.game.yBuffer;
             maxY = maxY <= enemyList[i].y1 ? enemyList[i].y1 : maxY;
         }
+
     }
 
     function addRowOfEnemy(xPos, yPos, disableEnemy) {
 
         var x = xPos;
-        var y = yPos;
 
-        // console.log("i wax");
-        // 
         var img = imgDetail.getEnemyImage();
 
         for (var i = 0; i < gameBoard.game.noOfEnemyPerRow; i++) {
@@ -270,6 +267,7 @@ var enemy = (function () {
                 x2: x + imgDetail.imgWidth,
                 y1: yPos,
                 y2: yPos + imgDetail.imgHeight,
+                points: 10,
                 disable: disableEnemy
             }
 
@@ -296,36 +294,18 @@ var enemy = (function () {
 
     }
 
-    function getFirstRow() {
-        var firstRow = [];
-        var noOfItems = 0;
-
-        for (var i = enemyList.length - 1; i >= 0; i--) {
-            if (!enemyList[i].disable) {
-                firstRow.push(enemyList[i])
-            }
-        }
-    }
-
-    function checkCollision(x1, x2, y1, y2) {
+    function checkCollision(x1, y1, x2, y2) {
 
         if (targetFound) {
             return 0
         }
 
-        var points = 0;
-
         for (var i = 0; i < enemyList.length; i++) {
-
-
-            // if (((x1 >= enemyObj.x1 && x1 <= enemyObj.x2) ||
-            //         (x2 >= enemyObj.x1 && x1 <= enemyObj.x2) ||
-            //         (y1 >= enemyObj.y1 && y1 <= enemyObj.y2) ||
-            //         (y2 >= enemyObj.y1 && y2 <= enemyObj.y2)) &&
-
             if (!enemyList[i].disable) {
-                if ((x1 >= enemyList[i].x1 && x1 <= enemyList[i].x2) ||
-                    (x2 >= enemyList[i].x1 && x2 <= enemyList[i].x2)) {
+
+                if (((x1 >= enemyList[i].x1 && x1 <= enemyList[i].x2) ||
+                        (x2 >= enemyList[i].x1 && x2 <= enemyList[i].x2)) &&
+                    (y1 <= enemyList[i].y2)) {
                     enemyList[i].disable = true;
                     player.updateScore(enemyList[i].points);
                     targetFound = true;
@@ -339,13 +319,26 @@ var enemy = (function () {
 
     function gameOver() {
 
-        var y = player.currentPlayer.currentY - gameBoard.game.yBuffer;
+        var done = false;
 
-        if (y < maxY) {
-            return true
+        var x = player.currentPlayer.x;
+        var y = player.currentPlayer.y;
+
+        for (var i = 0; i < enemyList.length; i++) {
+            if (!enemyList[i].disable) {
+                if (player.currentPlayer.y <= enemyList[i].y2) {
+                    done = true;
+                    break
+                }
+            }
+
         }
 
-        return false
+        if (done) {
+            return true
+        } else {
+            return false
+        }
     }
 
     return {
@@ -372,8 +365,33 @@ var player = (function () {
 
     var currentPlayer = {
         playerNo: 1,
-        currentX: 0,
-        currentY: 0
+        x: 0,
+        y: 0
+    }
+
+    function moveLeft() {
+
+        var mOffSet = imgDetail.imgWidth;
+        var x = player.currentPlayer.x - mOffSet;
+
+        if (x < gameBoard.game.x1) {
+            player.currentPlayer.x = gameBoard.game.x1
+        } else {
+            player.currentPlayer.x = x
+        }
+
+    }
+
+    function moveRight() {
+        var mOffSet = imgDetail.imgWidth;
+        var xRightBorder = gameBoard.game.width - gameBoard.game.maxOffSet;
+        var x = player.currentPlayer.x + mOffSet;
+        if (x >= xRightBorder) {
+            player.currentPlayer.x = xRightBorder;
+        } else {
+            var x = player.currentPlayer.x + mOffSet;
+            player.currentPlayer.x = x;
+        }
     }
 
     function updateScore(points) {
@@ -403,50 +421,135 @@ var player = (function () {
 
     function displayPlayer(x, y) {
 
-        gameBoard.ctx.drawImage(imgDetail.playerImage, x, y, imgDetail.imgWidth * 2, imgDetail.imgHeight * 2);
+        gameBoard.ctx.drawImage(imgDetail.playerImage, currentPlayer.x, currentPlayer.y, imgDetail.imgWidth * 2, imgDetail.imgHeight * 2);
     }
 
     return {
         updateScore,
         updateScoreCard,
         currentPlayer,
-        displayPlayer
+        displayPlayer,
+        moveLeft,
+        moveRight
     }
 })();
 
+window.addEventListener('keydown', keyDown);
 
-window.addEventListener('keydown', function (e) {
-
-    mOffSet = imgDetail.imgWidth;
-
-    if (e.keyCode === 37) {
-        var x = player.currentPlayer.currentX - mOffSet;
-        if (x < gameBoard.game.x1) {
-            player.currentPlayer.currentX = gameBoard.game.x1
-        } else {
-            player.currentPlayer.currentX = x
-        }
-
-        // render();
-    } else if (e.keyCode === 39) {
-        var xRightBorder = gameBoard.game.width - gameBoard.game.maxOffSet;
-        var x = player.currentPlayer.currentX + mOffSet;
-        if (x >= xRightBorder) {
-            player.currentPlayer.currentX = xRightBorder;
-        } else {
-            var x = player.currentPlayer.currentX + mOffSet;
-            player.currentPlayer.currentX = x;
-        }
+function keyDown(e) {
 
 
-        // render();
-    } else if (e.keyCode === 27) {
-        // stopGame()
-    } else if (e.keyCode === 32 || e.keyCode === 38) {
-        Bullets.shoot();
+    console.log(e.keyCode);
+    if ((e.keyCode === 37) || (e.keyCode === 65)) {
+        prevKeyCode = e.keyCode;
+        keyIsPress = true;
+        player.moveLeft();
     }
 
-}, false);
+    if ((e.keyCode === 39) || (e.keyCode === 68)) {
+        prevKeyCode = e.keyCode;
+        keyIsPress = true;
+        player.moveRight();
+    }
+
+    if (e.keyCode === 27) {
+        stopGame()
+    }
+
+    if (e.keyCode === 32 || e.keyCode === 38) {
+        targetFound = false;
+        Bullets.shoot();
+
+        if (keyIsPress) {
+            if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
+               
+                player.moveLeft();
+            }
+
+            if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
+                console.log("I mean 39");
+                player.moveRight();
+            }
+        }
+
+    }
+
+    // if (e.keyCode === 32 || e.keyCode === 38) {
+    //     targetFound = false;
+    //     Bullets.shoot();
+    // }
+}
+
+window.addEventListener('keyup', keyUp);
+
+function keyUp(e) {
+
+ 
+    if (e.keyCode === 32 || e.keyCode === 38) {
+        targetFound = false;
+        Bullets.shoot();
+
+        if (keyIsPress) {
+            if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
+               
+                player.moveLeft();
+            }
+
+            if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
+                console.log("I mean 39");
+                player.moveRight();
+            }
+        }
+
+    }
+
+    if (keyIsPress && e.keyCode === 37) {
+        // keyIsPress = false;
+        keyIsPress = true;
+        prevKeyCode = e.keyCode;
+        player.moveLeft();
+    }
+
+    if (keyIsPress && prevKeyCode === 39) {
+        // keyIsPress = false;
+        keyIsPress = true;
+        prevKeyCode = e.keyCode;
+        player.moveRight();
+    }
+    // if ((prevKeyCode === 37) || (prevKeyCode === 39)) {
+    //     keyIsPress = false;
+    // }
+};
+
+
+
+window.addEventListener('keypress', function (e) {
+
+    if (e.keyCode === 37) {
+        keyIsPress = true;
+        prevKeyCode = e.keyCode;
+        player.moveLeft();
+    }
+
+    if (e.keyCode === 39) {
+        keyIsPress = true;
+        prevKeyCode = e.keyCode;
+        player.moveRight();
+    }
+
+    if (e.keyCode === 65) {
+        keyIsPress = true;
+        prevKeyCode = e.keyCode;
+        player.moveLeft();
+    }
+
+    if (e.keyCode === 68) {
+        keyIsPress = true;
+        prevKeyCode = e.keyCode;
+        player.moveRight();
+    }
+
+});
 
 var Bullets = (function () {
 
@@ -456,15 +559,11 @@ var Bullets = (function () {
         startX: 0,
         startY: 0,
         color: "#FFFFFF", // '#000000',
-        width: 3,
+        width: 10,
         height: 4,
         velocity: 0,
         active: false
     };
-
-    function bulletIsWithin(x, y) {
-        return x >= 0 && x <= gameBoard.game.width && y >= 0 && y <= gameBoard.height
-    }
 
     function drawBullet() {
 
@@ -473,9 +572,13 @@ var Bullets = (function () {
             gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
             updateBullet();
         }
+
     };
 
     function updateBullet() {
+        if (targetFound) {
+            bulletObj.active = false;
+        }
 
         if (bulletObj.active) {
 
@@ -483,8 +586,7 @@ var Bullets = (function () {
                 bulletObj.active = false;
             } else {
                 bulletObj.y = bulletObj.y - bulletObj.velocity;
-                enemy.checkCollision(bulletObj.x, bulletObj.y, bulletObj.x + bulletObj.width, bulletObj.y + bulletObj.height) ;
-
+                enemy.checkCollision(bulletObj.x, bulletObj.y, bulletObj.x + bulletObj.width, bulletObj.y + bulletObj.height);
             }
         }
     };
@@ -494,11 +596,9 @@ var Bullets = (function () {
         if (!bulletObj.active) {
             targetFound = false;
             bulletObj.active = true;
-            bulletObj.startX = player.currentPlayer.currentX + imgDetail.imgWidth / 2;
-            bulletObj.startY = player.currentPlayer.currentY;
-            bulletObj.velocity = (progress / 50) * gameBoard.game.yBuffer / 2;
-            bulletObj.x = player.currentPlayer.currentX + imgDetail.imgWidth / 2;
-            bulletObj.y = player.currentPlayer.currentY;
+            bulletObj.velocity = (progress / 30) * gameBoard.game.yBuffer;
+            bulletObj.x = player.currentPlayer.x + imgDetail.imgWidth / 2 - bulletObj.width / 2;
+            bulletObj.y = player.currentPlayer.y;
         }
 
     }
@@ -514,8 +614,8 @@ var Bullets = (function () {
 
 function moveEnemy() {
 
-    var xRightBorder = gameBoard.game.width - gameBoard.game.maxOffSet;
-    var xLeftBorder = gameBoard.game.maxOffSet;
+    var rightBorder = gameBoard.game.width - 10;
+    var leftBorder = gameBoard.game.x1 + 10;
 
     if (endOfLine) {
 
@@ -536,35 +636,35 @@ function moveEnemy() {
     } else {
         var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
 
+        // Use the 1st enemy in the 1st column to determine the movement
+        var firstEnemy = enemy.enemyList[0];
+        // Use the last enemy in the 1st column to determine the movement
+        var lastEnemy = enemy.enemyList[gameBoard.game.noOfEnemyPerRow - 1];
+        // 
+
         if (gameBoard.game.direction === 1) {
 
-            gameBoard.game.xOffSet += offSetAmt;
-
-            if (gameBoard.game.xOffSet >= gameBoard.game.maxOffSet) {
-                gameBoard.game.xOffSet = gameBoard.game.maxOffSet - offSetAmt;
+            if ((lastEnemy.x2 + offSetAmt) > rightBorder) {
+                gameBoard.game.xOffSet -= offSetAmt;
                 enemy.updateEnemy(-1 * offSetAmt);
                 gameBoard.game.direction = -1;
-            } else {
 
-                if (gameBoard.game.xOffSet === 0) {
-                    gameBoard.game.xOffSet = offSetAmt;
-                } else {}
+            } else {
+                gameBoard.game.xOffSet += offSetAmt;
                 enemy.updateEnemy(offSetAmt);
             }
-        } else {
 
-            if (gameBoard.game.xOffSet >= 0) {
-                gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1 * offSetAmt);
-            } else if (Math.abs(gameBoard.game.xOffSet) >= gameBoard.game.maxOffSet) {
-                endOfLine = true;
+        } else {
+            if ((firstEnemy.x1 - offSetAmt) < leftBorder) {
                 gameBoard.game.xOffSet += offSetAmt;
-                enemy.updateEnemy(-1 * offSetAmt);
                 gameBoard.game.direction = 1;
+                endOfLine = true;
+                enemy.updateEnemy(offSetAmt);
             } else {
                 gameBoard.game.xOffSet -= offSetAmt;
-                enemy.updateEnemy(-1 * offSetAmt);
+                enemy.updateEnemy(-offSetAmt);
             }
+
         }
     }
 
@@ -585,8 +685,8 @@ var start = Date.now();
 
 gameBoard.clearGameBoard();
 player.currentPlayer.playerNo = 1;
-player.currentPlayer.currentX = gameBoard.game.x2 / 2;
-player.currentPlayer.currentY = gameBoard.game.y2 - gameBoard.game.yBuffer;
+player.currentPlayer.x = gameBoard.game.x2 / 2;
+player.currentPlayer.y = gameBoard.game.y2 - gameBoard.game.yBuffer;
 var endGame = false;
 
 function render() {
@@ -596,16 +696,14 @@ function render() {
     progress = ct - start;
 
     gameBoard.clearGameBoard();
-    moveEnemy();
-    Bullets.drawBullet();
-    player.updateScoreCard(player.currentPlayer.playerNo);
-    player.displayPlayer(player.currentPlayer.currentX, player.currentPlayer.currentY);
-    enemy.displayEnemy();
-    
-    
-    // Bullets.updateBullet();
 
-    // Bullets.shoot();
+    Bullets.drawBullet();
+    // debugger;
+    player.updateScoreCard(player.currentPlayer.playerNo);
+    player.displayPlayer(player.currentPlayer.x, player.currentPlayer.y);
+    moveEnemy();
+    enemy.displayEnemy();
+
 
     if (!endGame) {
         requestAnimationFrame(render);
