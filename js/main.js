@@ -651,6 +651,18 @@ var Player = (function () {
 //     Bullets.shoot();
 // });
 
+window.addEventListener('keyup', function(e) {
+
+    if (e.keyCode === 37) {
+        prevKeyCode = "";
+        keyIsPress = false;
+    } else if ((e.keyCode === 39) || (e.keyCode === 68)) {
+        prevKeyCode = "";
+        keyIsPress = false;
+    } 
+
+});
+
 window.addEventListener('keydown', keyDown);
 
 function keyDown(e) {
