@@ -11,8 +11,8 @@ body {
 }
 
 #canvas {
-    /* width: 600px;
-    height: 600px; */
+    width: 600px;
+    height: 600px;
     margin: auto;
 }
 
@@ -30,7 +30,7 @@ body {
     width: 30%;
     /* padding: 50px; */
     background-color: white;
-    
+
     color: none;
     margin: 20px;
 

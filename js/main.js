@@ -8,8 +8,9 @@ var leftKey = document.getElementById("left");
 var shootKey = document.getElementById("shoot");
 var rightKey = document.getElementById("right");
 var shootingSound = new Audio("audio/shoot.wav");
+var explodeSound = new Audio("audio/explosion.wav");
 
-shootingSound.load();
+// shootingSound.load();
 
 
 
@@ -86,10 +87,10 @@ var gameBoard = (function () {
     var game = {
         // width: window.screen.availWidth,
         // height: window.screen.availHeight,
-        // width: document.body.clientWidth,
-        // height: document.body.clientHeight,
-        width: 600,
-        height: 600,
+        width: document.body.clientWidth,
+        height: document.body.clientHeight,
+        // width: 600,
+        // height: 600,
         // width: window.innerWidth,
         // height: window.innerHeight,
         x1: 0,
@@ -153,7 +154,7 @@ var gameBoard = (function () {
 
         gameBody.width = game.width;
         gameBody.height = game.height;
-        gameBody.className = "canval";
+        gameBody.className = "canvas";
         // gameBoard.margin = "0 30px 0 30px";
         // gameBoard.padding = "30px";
         // gameBoard.border = "10px";
@@ -332,11 +333,6 @@ var enemy = (function () {
 
     }
 
-    function showCollisionEffect() {
-
-
-    }
-
     function checkCollision(x1, y1, x2, y2) {
 
         // if (targetFound) {
@@ -357,8 +353,6 @@ var enemy = (function () {
                     enemyList[i].disable = true;
                     player.updateScore(enemyList[i].points);
                     targetFound = true;
-
-                    showCollisionEffect();
                     // var img = new Image;
                     // img.src = 'images/explosion.png'
                     // gameBoard.ctx.drawImage(img, enemyList[i].x1, enemyList[i].y1, imgDetail.imgWidth, imgDetail.imgHeight);
@@ -675,6 +669,9 @@ var Bullets = (function () {
                 // gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
 
                 if (enemy.checkCollision(bulletList[i].x, bulletList[i].y, bulletList[i].x + bulletList[i].width, bulletList[i].y + bulletList[i].height)) {
+                    
+                    explodeSound.currentTime = 0;
+                    explodeSound.play();
                     bulletList[i].active = false;
                     targetFound = false;
                     // bulletList.slice(i,i);
@@ -727,9 +724,10 @@ var Bullets = (function () {
 
         var shootingSound = new Audio("audio/shoot.wav");
 
-        shootingSound.load();
-        shootingSound.play();
+        // shootingSound.load();
         shootingSound.currentTime = 0;
+        shootingSound.play();
+        
 
         bulletList.push(bulletData);
 
