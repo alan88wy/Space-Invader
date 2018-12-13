@@ -3,6 +3,15 @@ var endOfLine = false;
 var targetFound = false;
 var keyIsPress = false;
 var prevKeyCode = 0;
+// Control key
+var leftKey = document.getElementById("left");
+var shootKey = document.getElementById("shoot");
+var rightKey = document.getElementById("right");
+var shootSound = new Audio("audio/shoot.wav" )
+
+// var audio = new Audio("audio/ufo_lowpitch.wav" );
+
+// audio.play();
 
 var imgDetail = (function () {
 
@@ -132,7 +141,8 @@ var gameBoard = (function () {
     function initializeGameBoard() {
 
         //create the canvas element
-        var gameBody = document.createElement("canvas");
+        // var gameBody = document.createElement("canvas");
+        var gameBody = document.getElementById("canvas");
         // var scoreCard = document.createElement("p");
 
         // Set the game board width and height
@@ -149,7 +159,7 @@ var gameBoard = (function () {
         //first we clear the Game Board
         clearGameBoard();
         // Add canvas to the body
-        document.body.insertAdjacentElement('beforeend', gameBody);
+        // document.body.insertAdjacentElement('beforeend', gameBody);
 
 
     }
@@ -553,6 +563,32 @@ var player = (function () {
     }
 })();
 
+leftKey.addEventListener('click', function (e) {
+    prevKeyCode = e.keyCode;
+    keyIsPress = true;
+    player.moveLeft();
+});
+
+rightKey.addEventListener('click', function (e) {
+    prevKeyCode = e.keyCode;
+    keyIsPress = true;
+    player.moveRight();
+});
+
+shootKey.addEventListener('click', function (e) {
+    targetFound = false;
+    if (keyIsPress) {
+
+        if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
+            player.moveLeft();
+        } else if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
+            player.moveRight();
+        }
+    }
+
+    Bullets.shoot();
+});
+
 window.addEventListener('keydown', keyDown);
 
 function keyDown(e) {
@@ -583,7 +619,10 @@ window.addEventListener('keypress', function (e) {
                 player.moveRight();
             }
         }
+
+        shootSound.play();
         Bullets.shoot();
+
     }
 });
 
@@ -609,13 +648,14 @@ var Bullets = (function () {
 
     function drawBullet() {
 
+        
         for (var i = 0; i < bulletList.length; i++) {
             if (bulletList[i].active) {
 
                 var missile = new Image();
                 missile.src = 'images/missile.png';
                 gameBoard.ctx.drawImage(missile, bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height);
-                
+
                 // gameBoard.ctx.beginPath();
                 // gameBoard.ctx.arc(bulletObj.x, bulletObj.y, 10, 0, 20); //Math.PI * 2);
                 // gameBoard.ctx.rect(bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height)
@@ -674,6 +714,7 @@ var Bullets = (function () {
 
         targetFound = false;
 
+        shootSound.play();
         bulletList.push(bulletData);
 
     }

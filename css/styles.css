@@ -10,8 +10,26 @@ body {
     background-color: rgb(153, 143, 199);
 }
 
-.canvas {
+#canvas {
     /* width: 600px;
     height: 600px; */
     margin: auto;
 }
+
+.control {
+    display: flex;
+    margin: auto;
+    width: 100%;
+    /* padding: 20px 5px;
+    border: 20px 20px; */
+
+}
+
+.control-key {
+    display: block;
+    width: 30%;
+    /* padding: 50px; */
+    background-color: white;
+    margin: 20px;
+}
+
