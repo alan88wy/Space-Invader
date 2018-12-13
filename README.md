@@ -1,6 +1,7 @@
 # Space Invaders Game
 
 **Author**: Alan
+
 **Created**: 13th December 2018
 
 ### Description
