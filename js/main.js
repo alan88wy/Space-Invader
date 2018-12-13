@@ -590,7 +590,7 @@ var Player = (function () {
             score = playerInfo.player2.score;
         }
 
-        var scoreCard = "Player : " + (currentPlayer - 1) + "  Scores : " + score;
+        var scoreCard = "Player : " + currentPlayer + "  Scores : " + score;
 
         if (Gameboard.game.width >= 768) {
             fontSize = Gameboard.game.width * 0.02;
