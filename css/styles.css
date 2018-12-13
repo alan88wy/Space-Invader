@@ -1,6 +1,7 @@
 body {
     margin: auto;
-    /* width: 100%;
+    max-width: 85vw;
+    /*
     height: 70vh; */
     /* width: 600px;
     height: 600px; */
@@ -15,12 +16,12 @@ body {
 #canvas {
     /* width: 320px;
     height: 600px; */
-    margin: auto;
+    /* margin: auto; */
 }
 
 .control {
     display: flex;
-    margin: auto;
+    margin: 0;
     width: 100%;
     /* padding: 20px 5px;
     border: 20px 20px; */
