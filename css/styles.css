@@ -1,34 +1,13 @@
 body {
     margin: auto;
-    max-width: 60%;
     width: 60%;
-    /* height: 70%; */
-    /* max-width: 50%; */
-    /* width: 600px;
-    height: 600px; */
-    /* background-image: url('../images/background.jpg');
-    background-size: cover;
-    background-repeat: no-repeat; */
-    /* margin-left: 50px; */
     background-color: rgb(153, 143, 199);
-}
-
-#canvas {
-    /* width: 75%; */
-    height: 50%; 
-    /* margin: 0; */
-    /* width: 320px;
-    height: 600px; */
-    /* margin: auto; */
 }
 
 .control {
     display: flex;
     margin: 0;
-    /* width: 100%; */
-    /* padding: 20px 5px;
-    border: 20px 20px; */
-
+ 
 }
 
 .my_audio {
