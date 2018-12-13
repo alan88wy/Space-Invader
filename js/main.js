@@ -7,9 +7,9 @@ var enemyVelocity = 1; // no use to calculate how fast to move the enemy. Will i
 var start = Date.now(); // get start time to use for timing calculation
 var endGame = false; // if end Game, exit
 // Control key
-var leftKey = document.getElementById("left"); // left key button on the screen for touch screen device
-var shootKey = document.getElementById("shoot"); // shoot button on the screen for touch screen device
-var rightKey = document.getElementById("right"); // right key button on the screen for touch screen device
+// var leftKey = document.getElementById("left"); // left key button on the screen for touch screen device
+// var shootKey = document.getElementById("shoot"); // shoot button on the screen for touch screen device
+// var rightKey = document.getElementById("right"); // right key button on the screen for touch screen device
 // Animation function
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
     window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -22,10 +22,6 @@ var explosionImg = new Image;
 
 // Explosion sound
 explosionImg.src = 'images/explosion.png'
-
-
-
-
 
 // var audio = new Audio("audio/ufo_lowpitch.wav" );
 
@@ -114,8 +110,8 @@ var imgDetail = (function () {
 
 var Gameboard = (function () {
     var game = {
-        width: window.visualViewport.width*0.6,
-        height: window.visualViewport.height*0.5,
+        width: window.visualViewport.width,
+        height: window.visualViewport.height*0.7,
         x1: 0,
         x2: 0,
         y1: 0,
@@ -139,8 +135,9 @@ var Gameboard = (function () {
     // Reset game board data
 
     function resetGameBoard() {
-        game.xBuffer = imgDetail.imgWidth + imgDetail.imgWidth * 0.5;
-        game.yBuffer = imgDetail.imgHeight + imgDetail.imgWidth * 0.5;
+        
+        game.xBuffer = imgDetail.imgWidth + imgDetail.imgWidth * 0.4;
+        game.yBuffer = imgDetail.imgHeight + imgDetail.imgWidth * 0.2;
         game.xOffSet = 0;
         game.noOfRowOfEnemy = 3;
         game.direction = -1;
@@ -148,11 +145,13 @@ var Gameboard = (function () {
         game.x2 = game.width - 10;
         game.y2 = game.height - 10;
         game.maxOffSet = Math.floor(game.xBuffer * 2);
-        game.startX = game.x1 + game.xBuffer * 2;
-        game.startY = game.y1 + game.xBuffer * 4;
+        game.startX = 10;
+        game.startY = 120;
         game.noOfEnemyPerRow = Math.floor((game.width - 4 * game.xBuffer) / game.xBuffer);
         game.direction = 1;
         game.verocity = Math.floor(imgDetail.width / 2);
+
+        
     }
 
     resetGameBoard();
@@ -165,22 +164,44 @@ var Gameboard = (function () {
 
     // Setup Game board background image
     function showBackground() {
-        
+
         clearGameBoard();
         var background = new Image();
         background.src = 'images/background05.png';
-        ctx.drawImage(background, 0, 0, game.width, game.height)
+        ctx.drawImage(background, 0, 0, game.width, game.height);
+
+        var fontSize = game.width * 0.025;
+        ctx.font = fontSize+'pt Calibri';
+
+        if (game.width >= 768) {
+            ctx.lineWidth = 3.3;
+        } else {
+            ctx.lineWidth = 1.5;
+        }
+        
+        // stroke color
+        ctx.strokeStyle = 'yellow';
+        
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
+
+        if (game.width >= 768) {
+            ctx.strokeText('Space Invaders', game.width/2 - (fontSize*5), fontSize + 10);
+        } else {
+            ctx.strokeText('Space Invaders', 160, 15);
+        }
+        
+
     }
 
     // getting and setting the game screen for user display
     function initializeGameBoard() {
 
         var gameBody = document.getElementById("canvas");
-    
+
         gameBody.width = game.width;
         gameBody.height = game.height;
         gameBody.className = "canvas";
-    
+
         ctx = gameBody.getContext("2d");
     }
 
@@ -273,7 +294,7 @@ var Enemy = (function () {
 
         Gameboard.game.noOfRowOfEnemy = 3;
 
-        var points = 12;
+        var points = 1;
 
         for (var i = 0; i < numRow; i++) {
 
@@ -285,7 +306,7 @@ var Enemy = (function () {
 
             addRowOfEnemy(x, y, disable, points);
 
-            points += 10;
+            // points += 12;
 
             y = y - Gameboard.game.yBuffer;
 
@@ -305,7 +326,7 @@ var Enemy = (function () {
         for (var i = 0; i < enemyList.length; i++) {
             enemyList[i].y1 = enemyList[i].y1 + Gameboard.game.yBuffer;
             enemyList[i].y2 = enemyList[i].y2 + Gameboard.game.yBuffer;
-            enemyList[i].points -= 1;
+            // enemyList[i].points -= 1;
             maxY = maxY <= enemyList[i].y1 ? enemyList[i].y1 : maxY;
         }
 
@@ -411,7 +432,7 @@ var Enemy = (function () {
         // if (Enemy.remainingEnemy() === 0) {
         //     done = true;      
         // }
-    
+
 
         if (done || noOfEnemy <= 0) {
             return true
@@ -449,6 +470,7 @@ var Enemy = (function () {
             // Use the last enemy in the 1st column to determine the movement
             var lastEnemy = Enemy.enemyList[Gameboard.game.noOfEnemyPerRow - 1];
             // 
+         
 
             if (Gameboard.game.direction === 1) {
 
@@ -560,6 +582,7 @@ var Player = (function () {
     function updateScoreCard(currentPlayer) {
 
         var score = 0;
+        var fontSize=0;
 
         if (currentPlayer.playerNo = 1) {
             score = playerInfo.player1.score;
@@ -569,9 +592,21 @@ var Player = (function () {
 
         var scoreCard = "Player : " + (currentPlayer - 1) + "  Scores : " + score;
 
-        Gameboard.ctx.font = 'italic 12pt Calibri';
+        if (Gameboard.game.width >= 768) {
+            fontSize = Gameboard.game.width * 0.02;
+        } else {
+            fontSize = Gameboard.game.width * 0.020;
+        }
+         
+        Gameboard.ctx.font = 'italic ' + fontSize + 'pt Calibri';
         Gameboard.ctx.fillStyle = "white";
-        Gameboard.ctx.fillText(scoreCard, 20, 20);
+
+        if (Gameboard.game.width >= 768) {
+            Gameboard.ctx.fillText(scoreCard, 10, 30);
+        } else {
+            Gameboard.ctx.fillText(scoreCard, 10, 15);
+        }
+        
     }
 
     function showPlayer(x, y) {
@@ -590,31 +625,31 @@ var Player = (function () {
     }
 })();
 
-leftKey.addEventListener('click', function (e) {
-    prevKeyCode = e.keyCode;
-    keyIsPress = true;
-    Player.moveLeft();
-});
+// leftKey.addEventListener('click', function (e) {
+//     prevKeyCode = e.keyCode;
+//     keyIsPress = true;
+//     Player.moveLeft();
+// });
 
-rightKey.addEventListener('click', function (e) {
-    prevKeyCode = e.keyCode;
-    keyIsPress = true;
-    Player.moveRight();
-});
+// rightKey.addEventListener('click', function (e) {
+//     prevKeyCode = e.keyCode;
+//     keyIsPress = true;
+//     Player.moveRight();
+// });
 
-shootKey.addEventListener('click', function (e) {
-    targetFound = false;
-    if (keyIsPress) {
+// shootKey.addEventListener('click', function (e) {
+//     targetFound = false;
+//     if (keyIsPress) {
 
-        if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
-            Player.moveLeft();
-        } else if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
-            Player.moveRight();
-        }
-    }
+//         if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
+//             Player.moveLeft();
+//         } else if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
+//             Player.moveRight();
+//         }
+//     }
 
-    Bullets.shoot();
-});
+//     Bullets.shoot();
+// });
 
 window.addEventListener('keydown', keyDown);
 
@@ -791,14 +826,14 @@ function render() {
 
     Gameboard.showBackground();
 
-    
+
     Enemy.showEnemy();
     Player.showPlayer(Player.currentPlayer.x, Player.currentPlayer.y);
     Bullets.drawBullet();
     Player.updateScoreCard(Player.currentPlayer.playerNo);
     Enemy.moveEnemy();
 
-    
+
     if (!endGame) {
         requestAnimationFrame(render);
     }
