@@ -29,7 +29,12 @@ body {
     display: block;
     width: 30%;
     /* padding: 50px; */
-    background-color: white;
+    background-color: none;
+    color: none;
     margin: 20px;
+
 }
 
+.my_audio {
+    display: none;
+}

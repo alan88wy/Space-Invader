@@ -7,7 +7,42 @@ var prevKeyCode = 0;
 var leftKey = document.getElementById("left");
 var shootKey = document.getElementById("shoot");
 var rightKey = document.getElementById("right");
-var shootSound = new Audio("audio/shoot.wav" )
+
+var soundSystem = function () {
+    var shootingSound = new Audio("audio/shoot.wav");
+
+    shootingSound.load();
+
+    var soundList = [];
+
+    function addShootingSound() {
+        var soundRecord = {
+            disable: false,
+            sound: shootingSound
+        }
+        soundList.push(soundRecord);
+    }
+
+    function playShootingSound() {
+        for (var i = 0; i < soundList.length; i++) {
+
+            if (!soundList[i].disable) {
+                soundList[i].sound.currentTime = 0;
+                soundList[i].sound.play();
+                soundList[i].disable = true;
+                // soundList.splice(i, 1)
+            }
+            }
+         
+    }
+
+    return {
+        addShootingSound,
+        playShootingSound,
+        soundList
+    }
+}();
+
 
 // var audio = new Audio("audio/ufo_lowpitch.wav" );
 
@@ -328,6 +363,8 @@ var enemy = (function () {
 
     }
 
+    
+
     function checkCollision(x1, y1, x2, y2) {
 
         // if (targetFound) {
@@ -349,6 +386,7 @@ var enemy = (function () {
                     player.updateScore(enemyList[i].points);
                     targetFound = true;
 
+                    showCollisionEffect();
                     // var img = new Image;
                     // img.src = 'images/explosion.png'
                     // gameBoard.ctx.drawImage(img, enemyList[i].x1, enemyList[i].y1, imgDetail.imgWidth, imgDetail.imgHeight);
@@ -620,7 +658,6 @@ window.addEventListener('keypress', function (e) {
             }
         }
 
-        shootSound.play();
         Bullets.shoot();
 
     }
@@ -648,7 +685,7 @@ var Bullets = (function () {
 
     function drawBullet() {
 
-        
+
         for (var i = 0; i < bulletList.length; i++) {
             if (bulletList[i].active) {
 
@@ -714,7 +751,7 @@ var Bullets = (function () {
 
         targetFound = false;
 
-        shootSound.play();
+        soundSystem.addShootingSound();
         bulletList.push(bulletData);
 
     }
@@ -765,6 +802,7 @@ function render() {
     enemy.displayEnemy();
     player.displayPlayer(player.currentPlayer.x, player.currentPlayer.y);
     Bullets.drawBullet();
+    soundSystem.playShootingSound();
     // debugger;
     player.updateScoreCard(player.currentPlayer.playerNo);
 
