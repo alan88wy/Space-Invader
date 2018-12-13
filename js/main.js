@@ -114,8 +114,8 @@ var imgDetail = (function () {
 
 var Gameboard = (function () {
     var game = {
-        width: window.visualViewport.width * 0.85,
-        height: window.visualViewport.height * 0.75,
+        width: window.visualViewport.width*0.6,
+        height: window.visualViewport.height*0.5,
         x1: 0,
         x2: 0,
         y1: 0,
