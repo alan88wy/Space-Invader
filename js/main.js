@@ -7,41 +7,10 @@ var prevKeyCode = 0;
 var leftKey = document.getElementById("left");
 var shootKey = document.getElementById("shoot");
 var rightKey = document.getElementById("right");
+var shootingSound = new Audio("audio/shoot.wav");
 
-var soundSystem = function () {
-    var shootingSound = new Audio("audio/shoot.wav");
+shootingSound.load();
 
-    shootingSound.load();
-
-    var soundList = [];
-
-    function addShootingSound() {
-        var soundRecord = {
-            disable: false,
-            sound: shootingSound
-        }
-        soundList.push(soundRecord);
-    }
-
-    function playShootingSound() {
-        for (var i = 0; i < soundList.length; i++) {
-
-            if (!soundList[i].disable) {
-                soundList[i].sound.currentTime = 0;
-                soundList[i].sound.play();
-                soundList[i].disable = true;
-                // soundList.splice(i, 1)
-            }
-            }
-         
-    }
-
-    return {
-        addShootingSound,
-        playShootingSound,
-        soundList
-    }
-}();
 
 
 // var audio = new Audio("audio/ufo_lowpitch.wav" );
@@ -363,7 +332,10 @@ var enemy = (function () {
 
     }
 
-    
+    function showCollisionEffect() {
+
+
+    }
 
     function checkCollision(x1, y1, x2, y2) {
 
@@ -751,7 +723,14 @@ var Bullets = (function () {
 
         targetFound = false;
 
-        soundSystem.addShootingSound();
+        // soundSystem.addShootingSound();
+
+        var shootingSound = new Audio("audio/shoot.wav");
+
+        shootingSound.load();
+        shootingSound.play();
+        shootingSound.currentTime = 0;
+
         bulletList.push(bulletData);
 
     }
@@ -802,8 +781,7 @@ function render() {
     enemy.displayEnemy();
     player.displayPlayer(player.currentPlayer.x, player.currentPlayer.y);
     Bullets.drawBullet();
-    soundSystem.playShootingSound();
-    // debugger;
+
     player.updateScoreCard(player.currentPlayer.playerNo);
 
     enemy.moveEnemy();
