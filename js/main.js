@@ -1,23 +1,37 @@
-var progress = 0;
-var endOfLine = false;
-var targetFound = false;
-var keyIsPress = false;
-var prevKeyCode = 0;
-var enemyVelocity = 1;
+var progress = 0; // Use to calculate the timing of animation
+var endOfLine = false; // When the enemy reah end of the line, it will move to next row
+var targetFound = false; // if the bullet hits the enemy, targetFound = true
+var keyIsPress = false; // if the left or right key is press, it will continue to move when shot button is press too
+var prevKeyCode = 0; // hold previous key code presses for left and right movement
+var enemyVelocity = 1; // no use to calculate how fast to move the enemy. Will increment when enemy is move to next row.
+var start = Date.now(); // get start time to use for timing calculation
+var endGame = false; // if end Game, exit
 // Control key
-var leftKey = document.getElementById("left");
-var shootKey = document.getElementById("shoot");
-var rightKey = document.getElementById("right");
+var leftKey = document.getElementById("left"); // left key button on the screen for touch screen device
+var shootKey = document.getElementById("shoot"); // shoot button on the screen for touch screen device
+var rightKey = document.getElementById("right"); // right key button on the screen for touch screen device
+// Animation function
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+var cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+
+// Shooting sound
 var shootingSound = new Audio("audio/shoot.wav");
 var explodeSound = new Audio("audio/explosion.wav");
+var explosionImg = new Image;
 
-// shootingSound.load();
+// Explosion sound
+explosionImg.src = 'images/explosion.png'
+
+
 
 
 
 // var audio = new Audio("audio/ufo_lowpitch.wav" );
 
 // audio.play();
+
+// initialize the default system info
 
 var initiateSystem = function () {
     progress = 0;
@@ -30,6 +44,7 @@ var initiateSystem = function () {
 
 initiateSystem();
 
+// imgDetail prepare various image lists for display later
 var imgDetail = (function () {
 
     var imgWidth = 24;
@@ -44,7 +59,7 @@ var imgDetail = (function () {
         "images/invader02.png",
         "images/invader03.png",
         "images/invader04.png",
-        "images/invader06.jpg"
+        "images/invader05.png"
     ];
 
     noOfImages = enemyImageUrl.length;
@@ -95,18 +110,12 @@ var imgDetail = (function () {
     }
 })();
 
-var gameBoard = (function () {
+// Main game board for displaying the game canvas
+
+var Gameboard = (function () {
     var game = {
-        // width: window.screen.availWidth,
-        // height: window.screen.availHeight,
-        width: window.screen.width,
-        height: window.screen.height*0.8,
-        // width: document.body.clientWidth,
-        // height: document.body.clientHeight,
-        // width: 600,
-        // height: 600,
-        // width: window.innerWidth,
-        // height: window.innerHeight,
+        width: window.visualViewport.width,
+        height: window.visualViewport.height * 0.85,
         x1: 0,
         x2: 0,
         y1: 0,
@@ -127,6 +136,8 @@ var gameBoard = (function () {
 
     var ctx = "";
 
+    // Reset game board data
+
     function resetGameBoard() {
         game.xBuffer = imgDetail.imgWidth + imgDetail.imgWidth * 0.5;
         game.yBuffer = imgDetail.imgHeight + imgDetail.imgWidth * 0.5;
@@ -146,69 +157,57 @@ var gameBoard = (function () {
 
     resetGameBoard();
 
+    // Clear game screen
+
     function clearGameBoard() {
         ctx.clearRect(0, 0, game.width, game.height);
     }
 
-    function displayBackground() {
-        // Setup Game board background image
+    // Setup Game board background image
+    function showBackground() {
+        
+        clearGameBoard();
         var background = new Image();
         background.src = 'images/background05.png';
         ctx.drawImage(background, 0, 0, game.width, game.height)
     }
 
+    // getting and setting the game screen for user display
     function initializeGameBoard() {
 
-        //create the canvas element
-        // var gameBody = document.createElement("canvas");
         var gameBody = document.getElementById("canvas");
-        // var scoreCard = document.createElement("p");
-
-        // Set the game board width and height
-
+    
         gameBody.width = game.width;
         gameBody.height = game.height;
         gameBody.className = "canvas";
-        // gameBoard.margin = "0 30px 0 30px";
-        // gameBoard.padding = "30px";
-        // gameBoard.border = "10px";
-        // Get the Game Board context
+    
         ctx = gameBody.getContext("2d");
-
-        //first we clear the Game Board
-        clearGameBoard();
-        // Add canvas to the body
-        // document.body.insertAdjacentElement('beforeend', gameBody);
-
-
     }
 
     initializeGameBoard();
 
-
-    var enemyZone = {
-        x1: 30,
-        y1: 30,
-        x2: 0,
-        y2: 0
-    }
+    // exporting variable and functions
 
     return {
         ctx,
         game,
-        enemyZone,
         clearGameBoard,
         resetGameBoard,
-        displayBackground
+        showBackground
     }
 
 })();
+
+// Random number generator function
+// Not being use at the moment
 
 function generateRandomNumber(x) {
     return Math.floor(Math.random() * x)
 }
 
-var enemy = (function () {
+// Enemy object - add, delete, show objects
+
+var Enemy = (function () {
     var enemyList = [];
     var masterEnemyList = [];
     var enemyObj = {
@@ -222,6 +221,8 @@ var enemy = (function () {
     };
 
     var maxY = 0;
+
+    // use to calculate the remaining enemy to determine whether the user has won.
 
     function remainingEnemy() {
 
@@ -239,21 +240,21 @@ var enemy = (function () {
     function updateEnemy(xoffSetAmt) {
         for (var i = enemyList.length - 1; i >= 0; i--) {
 
-            enemyList[i].x1 = enemyList[i].x1 + xoffSetAmt*enemyVelocity;
-            enemyList[i].x2 = enemyList[i].x2 + xoffSetAmt*enemyVelocity;
+            enemyList[i].x1 = enemyList[i].x1 + xoffSetAmt * enemyVelocity;
+            enemyList[i].x2 = enemyList[i].x2 + xoffSetAmt * enemyVelocity;
 
         }
     }
 
-    function displayEnemy() {
+    function showEnemy() {
 
         for (var i = enemyList.length - 1; i >= 0; i--) {
 
             if (!enemyList[i].disable) {
-                var x = enemyList[i].x1; //+ gameBoard.game.xOffSet;
+                var x = enemyList[i].x1; //+ Gameboard.game.xOffSet;
                 var y = enemyList[i].y1;
                 var img = enemyList[i].img;
-                gameBoard.ctx.drawImage(img, x, y, imgDetail.imgWidth, imgDetail.imgHeight);
+                Gameboard.ctx.drawImage(img, x, y, imgDetail.imgWidth, imgDetail.imgHeight);
             }
         }
     }
@@ -264,13 +265,13 @@ var enemy = (function () {
 
     function createEnemy() {
 
-        var x = gameBoard.game.startX;
-        var y = gameBoard.game.startY;
-        var numRow = gameBoard.game.totalNoOfRow;
+        var x = Gameboard.game.startX;
+        var y = Gameboard.game.startY;
+        var numRow = Gameboard.game.totalNoOfRow;
 
         enemyList = [];
 
-        gameBoard.game.noOfRowOfEnemy = 3;
+        Gameboard.game.noOfRowOfEnemy = 3;
 
         var points = 12;
 
@@ -278,7 +279,7 @@ var enemy = (function () {
 
             var disable = false;
 
-            if (i >= gameBoard.game.noOfRowOfEnemy) {
+            if (i >= Gameboard.game.noOfRowOfEnemy) {
                 disable = true;
             }
 
@@ -286,7 +287,7 @@ var enemy = (function () {
 
             points += 10;
 
-            y = y - gameBoard.game.yBuffer;
+            y = y - Gameboard.game.yBuffer;
 
             maxY = maxY <= y ? y : maxY;
 
@@ -299,11 +300,11 @@ var enemy = (function () {
 
     function moveEnemyDown() {
 
-        enemyVelocity = enemyVelocity + enemyVelocity * progress / 200;
+        enemyVelocity = enemyVelocity + enemyVelocity * progress / 450;
 
         for (var i = 0; i < enemyList.length; i++) {
-            enemyList[i].y1 = enemyList[i].y1 + gameBoard.game.yBuffer;
-            enemyList[i].y2 = enemyList[i].y2 + gameBoard.game.yBuffer;
+            enemyList[i].y1 = enemyList[i].y1 + Gameboard.game.yBuffer;
+            enemyList[i].y2 = enemyList[i].y2 + Gameboard.game.yBuffer;
             enemyList[i].points -= 1;
             maxY = maxY <= enemyList[i].y1 ? enemyList[i].y1 : maxY;
         }
@@ -316,7 +317,7 @@ var enemy = (function () {
 
         var img = imgDetail.getEnemyImage();
 
-        for (var i = 0; i < gameBoard.game.noOfEnemyPerRow; i++) {
+        for (var i = 0; i < Gameboard.game.noOfEnemyPerRow; i++) {
 
             var enemyObj = {
                 img: img,
@@ -330,10 +331,10 @@ var enemy = (function () {
 
             enemyList.push(enemyObj);
 
-            x = x + gameBoard.game.xBuffer;
+            x = x + Gameboard.game.xBuffer;
 
-            if (x > gameBoard.game.width) {
-                x = gameBoard.x1;
+            if (x > Gameboard.game.width) {
+                x = Gameboard.x1;
             }
         }
 
@@ -341,8 +342,8 @@ var enemy = (function () {
 
     function activateNewEnemy() {
 
-        var noOfRow = gameBoard.game.noOfRowOfEnemy;
-        var noOfColumn = gameBoard.game.noOfEnemyPerRow;
+        var noOfRow = Gameboard.game.noOfRowOfEnemy;
+        var noOfColumn = Gameboard.game.noOfEnemyPerRow;
         var startIndex = noOfRow * noOfColumn;
 
         for (var i = startIndex; i < (startIndex + noOfColumn); i++) {
@@ -369,12 +370,8 @@ var enemy = (function () {
                     //     if (y1 <= enemyList[i].y2) {
 
                     enemyList[i].disable = true;
-                    player.updateScore(enemyList[i].points);
+                    Player.updateScore(enemyList[i].points);
                     targetFound = true;
-                    // var img = new Image;
-                    // img.src = 'images/explosion.png'
-                    // gameBoard.ctx.drawImage(img, enemyList[i].x1, enemyList[i].y1, imgDetail.imgWidth, imgDetail.imgHeight);
-
                     break
 
                     // }
@@ -395,21 +392,28 @@ var enemy = (function () {
     function gameOver() {
 
         var done = false;
+        var noOfEnemy = 0
 
-        var x = player.currentPlayer.x;
-        var y = player.currentPlayer.y;
+        var x = Player.currentPlayer.x;
+        var y = Player.currentPlayer.y;
 
         for (var i = 0; i < enemyList.length; i++) {
             if (!enemyList[i].disable) {
-                if (player.currentPlayer.y <= enemyList[i].y2) {
+                if (Player.currentPlayer.y <= enemyList[i].y2) {
                     done = true;
                     break
                 }
+                noOfEnemy++
             }
 
         }
 
-        if (done) {
+        // if (Enemy.remainingEnemy() === 0) {
+        //     done = true;      
+        // }
+    
+
+        if (done || noOfEnemy <= 0) {
             return true
         } else {
             return false
@@ -418,22 +422,22 @@ var enemy = (function () {
 
     function moveEnemy() {
 
-        var rightBorder = gameBoard.game.width - 10;
-        var leftBorder = gameBoard.game.x1 + 10;
+        var rightBorder = Gameboard.game.width - 10;
+        var leftBorder = Gameboard.game.x1 + 10;
 
         if (endOfLine) {
 
-            if (enemy.gameOver()) {
+            if (Enemy.gameOver()) {
                 endGame = true;
                 stopGame();
             } else {
-               if (gameBoard.game.noOfRowOfEnemy < gameBoard.game.totalNoOfRow) {
-                    enemy.activateNewEnemy();
-                    gameBoard.game.noOfRowOfEnemy += 1;
+                if (Gameboard.game.noOfRowOfEnemy < Gameboard.game.totalNoOfRow) {
+                    Enemy.activateNewEnemy();
+                    Gameboard.game.noOfRowOfEnemy += 1;
 
                 };
 
-                enemy.moveEnemyDown();
+                Enemy.moveEnemyDown();
                 endOfLine = false;
 
             }
@@ -441,32 +445,32 @@ var enemy = (function () {
             var offSetAmt = (progress / 50) * imgDetail.imgWidth / 4;
 
             // Use the 1st enemy in the 1st column to determine the movement
-            var firstEnemy = enemy.enemyList[0];
+            var firstEnemy = Enemy.enemyList[0];
             // Use the last enemy in the 1st column to determine the movement
-            var lastEnemy = enemy.enemyList[gameBoard.game.noOfEnemyPerRow - 1];
+            var lastEnemy = Enemy.enemyList[Gameboard.game.noOfEnemyPerRow - 1];
             // 
 
-            if (gameBoard.game.direction === 1) {
+            if (Gameboard.game.direction === 1) {
 
                 if ((lastEnemy.x2 + offSetAmt) > rightBorder) {
-                    gameBoard.game.xOffSet -= offSetAmt;
-                    enemy.updateEnemy(-1 * offSetAmt);
-                    gameBoard.game.direction = -1;
+                    Gameboard.game.xOffSet -= offSetAmt;
+                    Enemy.updateEnemy(-1 * offSetAmt);
+                    Gameboard.game.direction = -1;
 
                 } else {
-                    gameBoard.game.xOffSet += offSetAmt;
-                    enemy.updateEnemy(offSetAmt);
+                    Gameboard.game.xOffSet += offSetAmt;
+                    Enemy.updateEnemy(offSetAmt);
                 }
 
             } else {
                 if ((firstEnemy.x1 - offSetAmt) <= leftBorder) {
-                    gameBoard.game.xOffSet += offSetAmt;
-                    gameBoard.game.direction = 1;
+                    Gameboard.game.xOffSet += offSetAmt;
+                    Gameboard.game.direction = 1;
                     endOfLine = true;
-                    enemy.updateEnemy(offSetAmt);
+                    Enemy.updateEnemy(offSetAmt);
                 } else {
-                    gameBoard.game.xOffSet -= offSetAmt;
-                    enemy.updateEnemy(-offSetAmt);
+                    Gameboard.game.xOffSet -= offSetAmt;
+                    Enemy.updateEnemy(-offSetAmt);
                 }
 
             }
@@ -477,7 +481,8 @@ var enemy = (function () {
 
     return {
         resetEnemy,
-        displayEnemy,
+        remainingEnemy,
+        showEnemy,
         activateNewEnemy,
         moveEnemyDown,
         moveEnemy,
@@ -488,7 +493,7 @@ var enemy = (function () {
     }
 })();
 
-var player = (function () {
+var Player = (function () {
 
     var playerInfo = {
         player1: {
@@ -521,26 +526,26 @@ var player = (function () {
     function moveLeft() {
 
         var mOffSet = imgDetail.imgWidth;
-        var x = player.currentPlayer.x - mOffSet;
+        var x = Player.currentPlayer.x - mOffSet;
 
-        if (x < gameBoard.game.x1) {
-            player.currentPlayer.x = gameBoard.game.x1
+        if (x < Gameboard.game.x1) {
+            Player.currentPlayer.x = Gameboard.game.x1
         } else {
-            player.currentPlayer.x = x
+            Player.currentPlayer.x = x
         }
 
     }
 
     function moveRight() {
         var mOffSet = imgDetail.imgWidth;
-        var xRightBorder = gameBoard.game.width - 40;
+        var xRightBorder = Gameboard.game.width - 40;
 
-        var x = player.currentPlayer.x + mOffSet;
+        var x = Player.currentPlayer.x + mOffSet;
 
         if (x >= xRightBorder) {
-            player.currentPlayer.x = xRightBorder;
+            Player.currentPlayer.x = xRightBorder;
         } else {
-            player.currentPlayer.x = x;
+            Player.currentPlayer.x = x;
         }
     }
 
@@ -564,21 +569,21 @@ var player = (function () {
 
         var scoreCard = "Player : " + (currentPlayer - 1) + "  Scores : " + score;
 
-        gameBoard.ctx.font = 'italic 12pt Calibri';
-        gameBoard.ctx.fillStyle = "white";
-        gameBoard.ctx.fillText(scoreCard, 20, 20);
+        Gameboard.ctx.font = 'italic 12pt Calibri';
+        Gameboard.ctx.fillStyle = "white";
+        Gameboard.ctx.fillText(scoreCard, 20, 20);
     }
 
-    function displayPlayer(x, y) {
+    function showPlayer(x, y) {
 
-        gameBoard.ctx.drawImage(imgDetail.playerImage, currentPlayer.x, currentPlayer.y, imgDetail.imgWidth * 2, imgDetail.imgHeight * 2);
+        Gameboard.ctx.drawImage(imgDetail.playerImage, currentPlayer.x, currentPlayer.y, imgDetail.imgWidth * 2, imgDetail.imgHeight * 2);
     }
 
     return {
         updateScore,
         updateScoreCard,
         currentPlayer,
-        displayPlayer,
+        showPlayer,
         playerAlive,
         moveLeft,
         moveRight
@@ -588,13 +593,13 @@ var player = (function () {
 leftKey.addEventListener('click', function (e) {
     prevKeyCode = e.keyCode;
     keyIsPress = true;
-    player.moveLeft();
+    Player.moveLeft();
 });
 
 rightKey.addEventListener('click', function (e) {
     prevKeyCode = e.keyCode;
     keyIsPress = true;
-    player.moveRight();
+    Player.moveRight();
 });
 
 shootKey.addEventListener('click', function (e) {
@@ -602,9 +607,9 @@ shootKey.addEventListener('click', function (e) {
     if (keyIsPress) {
 
         if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
-            player.moveLeft();
+            Player.moveLeft();
         } else if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
-            player.moveRight();
+            Player.moveRight();
         }
     }
 
@@ -618,11 +623,11 @@ function keyDown(e) {
     if ((e.keyCode === 37) || (e.keyCode === 65)) {
         prevKeyCode = e.keyCode;
         keyIsPress = true;
-        player.moveLeft();
+        Player.moveLeft();
     } else if ((e.keyCode === 39) || (e.keyCode === 68)) {
         prevKeyCode = e.keyCode;
         keyIsPress = true;
-        player.moveRight();
+        Player.moveRight();
     } else if (e.keyCode === 27) {
         stopGame()
     }
@@ -636,9 +641,9 @@ window.addEventListener('keypress', function (e) {
         if (keyIsPress) {
 
             if ((prevKeyCode === 37) || (prevKeyCode === 65)) {
-                player.moveLeft();
+                Player.moveLeft();
             } else if ((prevKeyCode === 39) || (prevKeyCode === 68)) {
-                player.moveRight();
+                Player.moveRight();
             }
         }
 
@@ -675,18 +680,22 @@ var Bullets = (function () {
 
                 var missile = new Image();
                 missile.src = 'images/missile.png';
-                gameBoard.ctx.drawImage(missile, bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height);
+                Gameboard.ctx.drawImage(missile, bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height);
 
-                // gameBoard.ctx.beginPath();
-                // gameBoard.ctx.arc(bulletObj.x, bulletObj.y, 10, 0, 20); //Math.PI * 2);
-                // gameBoard.ctx.rect(bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height)
-                // gameBoard.ctx.fillStyle = bulletList[i].color;
-                // gameBoard.ctx.fill();
-                // gameBoard.ctx.closePath();
-                // gameBoard.ctx.fillStyle = bulletObj.color;
-                // gameBoard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
+                // Gameboard.ctx.beginPath();
+                // Gameboard.ctx.arc(bulletObj.x, bulletObj.y, 10, 0, 20); //Math.PI * 2);
+                // Gameboard.ctx.rect(bulletList[i].x, bulletList[i].y, bulletList[i].width, bulletList[i].height)
+                // Gameboard.ctx.fillStyle = bulletList[i].color;
+                // Gameboard.ctx.fill();
+                // Gameboard.ctx.closePath();
+                // Gameboard.ctx.fillStyle = bulletObj.color;
+                // Gameboard.ctx.fillRect(bulletObj.x, bulletObj.y, bulletObj.width, bulletObj.height);
 
-                if (enemy.checkCollision(bulletList[i].x, bulletList[i].y, bulletList[i].x + bulletList[i].width, bulletList[i].y + bulletList[i].height)) {
+                if (Enemy.checkCollision(bulletList[i].x, bulletList[i].y, bulletList[i].x + bulletList[i].width, bulletList[i].y + bulletList[i].height)) {
+
+                    // var collisionImg = new Image();
+                    // collisionImg.src = 'images/background05.png';
+                    // Gameboard.ctx.drawImage(collisionImg, 0, 0, Gameboard.game.width, Gameboard.game.height)
 
                     explodeSound.currentTime = 0;
                     explodeSound.play();
@@ -709,7 +718,7 @@ var Bullets = (function () {
 
         for (var i = 0; i < bulletList.length; i++) {
             if (bulletList[i].active) {
-                if (bulletList[i].y <= gameBoard.game.startY) {
+                if (bulletList[i].y <= Gameboard.game.startY) {
                     bulletList[i].active = false;
                     // bulletList.slice(i,i);
                 } else {
@@ -725,14 +734,14 @@ var Bullets = (function () {
     function shoot() {
 
         var bulletData = {
-            x: player.currentPlayer.x + imgDetail.imgWidth - bulletObj.width / 2,
-            y: player.currentPlayer.y,
+            x: Player.currentPlayer.x + imgDetail.imgWidth - bulletObj.width / 2,
+            y: Player.currentPlayer.y,
             startX: bulletObj.startX,
             startY: bulletObj.startY,
             color: bulletObj.color,
             width: bulletObj.width,
             height: bulletObj.height,
-            velocity: (progress / 80) * gameBoard.game.yBuffer,
+            velocity: (progress / 80) * Gameboard.game.yBuffer,
             active: true
         }
 
@@ -768,18 +777,6 @@ function stopGame() {
     cancelAnimationFrame(render);
 }
 
-var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-    window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-
-var cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
-
-var start = Date.now();
-
-gameBoard.clearGameBoard();
-player.currentPlayer.playerNo = 1;
-player.currentPlayer.x = gameBoard.game.x2 / 2;
-player.currentPlayer.y = gameBoard.game.y2 - gameBoard.game.yBuffer;
-var endGame = false;
 
 
 
@@ -790,20 +787,18 @@ function render() {
     progress = ct - start;
 
 
-    gameBoard.clearGameBoard();
+    // Gameboard.clearGameBoard();
 
-    gameBoard.displayBackground();
+    Gameboard.showBackground();
 
-    enemy.displayEnemy();
-    player.displayPlayer(player.currentPlayer.x, player.currentPlayer.y);
+    
+    Enemy.showEnemy();
+    Player.showPlayer(Player.currentPlayer.x, Player.currentPlayer.y);
     Bullets.drawBullet();
+    Player.updateScoreCard(Player.currentPlayer.playerNo);
+    Enemy.moveEnemy();
 
-    player.updateScoreCard(player.currentPlayer.playerNo);
-
-    enemy.moveEnemy();
-
-
-
+    
     if (!endGame) {
         requestAnimationFrame(render);
     }
@@ -811,13 +806,18 @@ function render() {
     start = ct;
 }
 
-gameBoard.resetGameBoard();
+Gameboard.resetGameBoard();
 Bullets.resetBulletList();
+
+// Setting current player location
+Player.currentPlayer.playerNo = 1;
+Player.currentPlayer.x = Gameboard.game.x2 / 2;
+Player.currentPlayer.y = Gameboard.game.y2 - Gameboard.game.yBuffer;
 
 requestAnimationFrame(render);
 
-// gameBoard.resetGameBoard();
-// enemy.resetEnemy();
+// Gameboard.resetGameBoard();
+// Enemy.resetEnemy();
 // Bullets.resetBulletList();
 
 // requestAnimationFrame(render);
